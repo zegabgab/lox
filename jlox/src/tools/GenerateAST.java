@@ -40,19 +40,23 @@ public class GenerateAST {
     }
 
     private static void generateSubclass(String baseClass, String subclass, String fields, PrintWriter writer) {
-        writer.println(INDENT + "static class " + subclass + " extends " + baseClass + " {");
+        writer.println(indentBy(1) + "static class " + subclass + " extends " + baseClass + " {");
         var split = fields.split(", ");
         for (var field : split) {
-            writer.println(INDENT + INDENT + "final " + field + ';');
+            writer.println(indentBy(2) + "final " + field + ';');
         }
         writer.println();
-        writer.println(INDENT + INDENT + "public " + subclass + "(" + fields + ") {");
+        writer.println(indentBy(2) + "public " + subclass + "(" + fields + ") {");
         for (var field : split) {
             var fieldName = field.split(" ")[1];
-            writer.println(INDENT + INDENT + INDENT + "this." + fieldName + " = " + fieldName + ';');
+            writer.println(indentBy(3) + "this." + fieldName + " = " + fieldName + ';');
         }
-        writer.println(INDENT + INDENT + '}');
-        writer.println(INDENT + '}');
+        writer.println(indentBy(2) + '}');
+        writer.println(indentBy(1) + '}');
         writer.println();
+    }
+
+    private static String indentBy(int amount) {
+        return INDENT.repeat(amount);
     }
 }
