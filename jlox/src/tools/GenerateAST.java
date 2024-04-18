@@ -34,26 +34,35 @@ public class GenerateAST {
         writer.println("abstract class " + baseName + " {");
         for (var subclass : subclasses) {
             var split = subclass.split(":");
-            generateSubclass(baseName, split[0].strip(), split[1].strip(), writer);
+            generateSubclass(GeneratedClass.make(subclass, baseName), writer);
         }
         writer.println("}");
     }
 
-    private static void generateSubclass(String baseClass, String subclass, String fields, PrintWriter writer) {
-        writer.println(indentBy(1) + "static class " + subclass + " extends " + baseClass + " {");
-        var split = fields.split(", ");
-        for (var field : split) {
+    private static void generateSubclass(GeneratedClass classDescription, PrintWriter writer) {
+        writer.println();
+        writer.println(indentBy(1) + "static class " + classDescription.name + " extends " + classDescription.baseClass + " {");
+        for (var field : classDescription.fields) {
             writer.println(indentBy(2) + "final " + field + ';');
         }
+
         writer.println();
-        writer.println(indentBy(2) + "public " + subclass + "(" + fields + ") {");
-        for (var field : split) {
-            var fieldName = field.split(" ")[1];
-            writer.println(indentBy(3) + "this." + fieldName + " = " + fieldName + ';');
+        writer.println(indentBy(2) + "public " + classDescription.name + "("
+                + classDescription.fields.stream()
+                .map(field -> field.type + " " + field.name)
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("")
+                + ") {");
+        for (var field : classDescription.fields) {
+            writer.println(indentBy(3) + "this." + field.name + " = " + field.name + ';');
         }
         writer.println(indentBy(2) + '}');
-        writer.println(indentBy(1) + '}');
+
         writer.println();
+        writer.println(indentBy(2) + "public <T> T accept(ExprVisitor<T> visitor) {");
+        writer.println(indentBy(3) + "return visitor.visit(this);");
+        writer.println(indentBy(2) + '}');
+        writer.println(indentBy(1) + '}');
     }
 
     private static String indentBy(int amount) {

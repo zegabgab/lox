@@ -1,6 +1,7 @@
 package jlox;
 
 abstract class Expr {
+
     static class Binary extends Expr {
         final Expr left;
         final Token operator;
@@ -10,6 +11,10 @@ abstract class Expr {
             this.left = left;
             this.operator = operator;
             this.right = right;
+        }
+
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
         }
     }
 
@@ -21,6 +26,10 @@ abstract class Expr {
             this.operator = operator;
             this.operand = operand;
         }
+
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
     }
 
     static class Grouping extends Expr {
@@ -28,6 +37,10 @@ abstract class Expr {
 
         public Grouping(Expr expression) {
             this.expression = expression;
+        }
+
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
         }
     }
 
@@ -37,6 +50,9 @@ abstract class Expr {
         public Literal(Object value) {
             this.value = value;
         }
-    }
 
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
 }
