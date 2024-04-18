@@ -25,4 +25,33 @@ class GeneratedClass {
 
         return new GeneratedClass(name, baseClass, fields);
     }
+
+    private String extending() {
+        return Optional.ofNullable(baseClass)
+                .map(name -> " extends " + name)
+                .orElse("");
+    }
+
+    // TODO
+    public String writeFormatted(CharSequence indent) {
+        StringBuilder builder = new StringBuilder();
+
+        builder.append("class ")
+                .append(name)
+                .append(extending())
+                .append(" {\n");
+
+        for (var field : fields) {
+            builder.append(indent)
+                    .append(field)
+                    .append(';');
+        }
+
+        return builder.toString();
+    }
+
+    // TODO
+    public List<String> writeFormattedLines(CharSequence indent) {
+        return null;
+    }
 }
