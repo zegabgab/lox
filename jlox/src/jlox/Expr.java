@@ -1,6 +1,7 @@
 package jlox;
 
 abstract class Expr {
+    abstract public <T> T accept(ExprVisitor<T> visitor);
 
     static class Binary extends Expr {
         final Expr left;
@@ -13,6 +14,7 @@ abstract class Expr {
             this.right = right;
         }
 
+        @Override
         public <T> T accept(ExprVisitor<T> visitor) {
             return visitor.visit(this);
         }
@@ -27,6 +29,7 @@ abstract class Expr {
             this.operand = operand;
         }
 
+        @Override
         public <T> T accept(ExprVisitor<T> visitor) {
             return visitor.visit(this);
         }
@@ -39,6 +42,7 @@ abstract class Expr {
             this.expression = expression;
         }
 
+        @Override
         public <T> T accept(ExprVisitor<T> visitor) {
             return visitor.visit(this);
         }
@@ -51,6 +55,7 @@ abstract class Expr {
             this.value = value;
         }
 
+        @Override
         public <T> T accept(ExprVisitor<T> visitor) {
             return visitor.visit(this);
         }

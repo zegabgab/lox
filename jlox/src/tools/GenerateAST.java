@@ -5,6 +5,7 @@ import java.util.*;
 
 public class GenerateAST {
     static final String INDENT = "    ";
+    static final List<String> indents = new ArrayList<>();
     static final String EXPRESSION_NAME = "Expr";
     static final List<String> EXPRESSION_CLASSES = List.of(
             "Binary     : Expr left, Token operator, Expr right",
@@ -32,8 +33,9 @@ public class GenerateAST {
         writer.println("package jlox;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
+        writer.println(
+                indentBy(1) + "abstract public <T> T accept(ExprVisitor<T> visitor);");
         for (var subclass : subclasses) {
-            var split = subclass.split(":");
             generateSubclass(GeneratedClass.make(subclass, baseName), writer);
         }
         writer.println("}");
@@ -59,6 +61,7 @@ public class GenerateAST {
         writer.println(indentBy(2) + '}');
 
         writer.println();
+        writer.println(indentBy(2) + "@Override");
         writer.println(indentBy(2) + "public <T> T accept(ExprVisitor<T> visitor) {");
         writer.println(indentBy(3) + "return visitor.visit(this);");
         writer.println(indentBy(2) + '}');
@@ -66,6 +69,9 @@ public class GenerateAST {
     }
 
     private static String indentBy(int amount) {
-        return INDENT.repeat(amount);
+        for (int i = indents.size(); i <= amount; i++) {
+            indents.add(INDENT.repeat(i));
+        }
+        return indents.get(amount);
     }
 }
