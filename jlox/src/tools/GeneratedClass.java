@@ -50,8 +50,23 @@ class GeneratedClass {
         return builder.toString();
     }
 
-    // TODO
     public List<String> writeFormattedLines(CharSequence indent) {
-        return null;
+        final var lines = new ArrayList<String>();
+        lines.add("class " + name + extending() + " {");
+        for (var field : fields) {
+            lines.add(indent + field.toString());
+        }
+        lines.add("");
+        lines.add(indent + "public " + name + fields.stream()
+                .map(GeneratedField::toString)
+                .reduce((left, right) -> left + ", " + right)
+                .orElse("")
+        + " {");
+        for (var field : fields) {
+            lines.add(indent + (indent + "this.") + field.name + " = " + field.name);
+        }
+        lines.add(indent + "}");
+        lines.add("}");
+        return lines;
     }
 }
