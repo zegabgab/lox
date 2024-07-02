@@ -5,7 +5,7 @@ import java.util.*;
 public class Token {
     final TokenType type;
     final String lexeme;
-    final Optional<Object> literal;
+    final Object literal;
     final int lineNo;
 
     public Token(TokenType type, String lexeme, Object literal, int lineNo) {
@@ -18,12 +18,12 @@ public class Token {
     public Token(TokenType type, String lexeme, int lineNo) {
         this.type = type;
         this.lexeme = lexeme;
-        this.literal = Optional.empty();
+        this.literal = null;
         this.lineNo = lineNo;
     }
 
     @Override
     public String toString() {
-        return type + " " + lexeme + " " + literal;
+        return type + " " + lexeme + " " + (literal != null ? literal.toString() : "");
     }
 }
