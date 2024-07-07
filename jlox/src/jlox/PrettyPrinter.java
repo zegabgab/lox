@@ -5,6 +5,10 @@ class PrettyPrinter implements ExprVisitor<String> {
         return "(" + expression + ")";
     }
 
+    public String print(Expr expression) {
+        return expression.accept(this);
+    }
+
     @Override
     public String visit(Expr.Unary unary) {
         return parenthesize(unary.operator.lexeme + " " + unary.operand.accept(this));
@@ -12,7 +16,7 @@ class PrettyPrinter implements ExprVisitor<String> {
 
     @Override
     public String visit(Expr.Binary binary) {
-        return parenthesize(binary.left.accept(this) + " " + binary.operator.lexeme + " " + binary.right.accept(this));
+        return parenthesize(binary.operator.lexeme + " " + binary.left.accept(this) + " " + binary.right.accept(this));
     }
 
     @Override
