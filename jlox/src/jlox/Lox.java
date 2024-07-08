@@ -59,13 +59,12 @@ public class Lox {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
         Parser parser = new Parser(tokens);
-        Expr expression = parser.parse();
+        var expression = parser.parse();
 
-        if (hadError) {
-            return;
-        }
-
-        System.out.println(new PrettyPrinter().print(expression));
+        expression.ifPresentOrElse(
+                expr -> System.out.println(new PrettyPrinter().print(expr)),
+                () -> System.out.println("This was wrong")
+        );
     }
 
     static void error(int lineNo, String message) {

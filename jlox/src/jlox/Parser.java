@@ -12,11 +12,11 @@ class Parser {
         this.tokens = tokens;
     }
 
-    public Expr parse() {
+    public Optional<Expr> parse() {
         try {
-            return expression();
+            return Optional.of(expression());
         } catch (ParseError ignored) {
-            return null;
+            return Optional.empty();
         }
     }
 
