@@ -4,11 +4,20 @@ import java.util.*;
 
 import static jlox.TokenType.*;
 
-class Parser {private final List<Token> tokens;
+class Parser {
+    private final List<Token> tokens;
     int current = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
+    }
+
+    public Expr parse() {
+        try {
+            return expression();
+        } catch (ParseError ignored) {
+            return null;
+        }
     }
 
     private Token current() {
@@ -30,9 +39,15 @@ class Parser {private final List<Token> tokens;
         return current().type.equals(type);
     }
 
+    private void advance() {
+        if (!isAtEnd()) {
+            current++;
+        }
+    }
+
     private boolean match(TokenType... types) {
         if (Arrays.stream(types).anyMatch(this::check)) {
-            current++;
+            advance();
             return true;
         }
         return false;
@@ -89,15 +104,45 @@ class Parser {private final List<Token> tokens;
         return primary();
     }
 
-    private Expr primary() {
-        if (match(LEFT_PAREN)) {
-            Expr expr = expression();
-            if (match(RIGHT_PAREN)) {
-                return new Expr.Grouping(expr);
+    private static class ParseError extends RuntimeException {}
+
+    private ParseError error(Token token, String message) {
+        Lox.error(token, message);
+        return new ParseError();
+    }
+
+    private void synchronize() {
+        advance();
+
+        while (!isAtEnd()) {
+            if (previous().type.equals(SEMICOLON)) {
+                return;
             }
-            Lox.error(previous().lineNo, "Expected ')'");
-            return null;
+
+            switch (current().type) {
+                case CLASS:
+                case FUN:
+                case VAR:
+                case IF:
+                case WHILE:
+                case FOR:
+                case PRINT:
+                case RETURN:
+                    return;
+            }
+            advance();
         }
+    }
+
+    private Token consume(TokenType type, String errorMessage) {
+        if (match(type)) {
+            return previous();
+        }
+
+        throw error(current(), errorMessage);
+    }
+
+    private Expr primary() {
         if (match(TRUE)) {
             return new Expr.Literal(true);
         }
@@ -113,7 +158,11 @@ class Parser {private final List<Token> tokens;
         if (match(STRING)) {
             return new Expr.Literal(previous().literal);
         }
-        Lox.error(previous().lineNo, "Expected literal");
-        return null;
+        if (match(LEFT_PAREN)) {
+            Expr expr = expression();
+            consume(RIGHT_PAREN, "Expected ')'");
+            return new Expr.Grouping(expr);
+        }
+        throw error(current(), "Expected expression");
     }
 }

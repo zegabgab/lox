@@ -1,7 +1,5 @@
 package jlox;
 
-import java.util.*;
-
 public class Token {
     final TokenType type;
     final String lexeme;
@@ -11,7 +9,7 @@ public class Token {
     public Token(TokenType type, String lexeme, Object literal, int lineNo) {
         this.type = type;
         this.lexeme = lexeme;
-        this.literal = Optional.ofNullable(literal);
+        this.literal = literal;
         this.lineNo = lineNo;
     }
 

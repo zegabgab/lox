@@ -3,7 +3,6 @@ package jlox;
 import java.io.*;
 import java.nio.charset.*;
 import java.util.*;
-import java.util.stream.*;
 
 public class Lox {
     private static boolean hadError = false;
@@ -59,14 +58,25 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        Parser parser = new Parser(tokens);
+        Expr expression = parser.parse();
 
-        for (var token : tokens) {
-            System.out.println(token);
+        if (hadError) {
+            return;
         }
+
+        System.out.println(new PrettyPrinter().print(expression));
     }
 
     static void error(int lineNo, String message) {
         report(lineNo, "", message);
+    }
+
+    static void error(Token token, String message) {
+        final String where = token.type.equals(TokenType.EOF)
+                ? " at end"
+                : " at '" + token.lexeme + '\'';
+        report(token.lineNo, where, message);
     }
 
     private static void report(int lineNo, String where, String message) {
