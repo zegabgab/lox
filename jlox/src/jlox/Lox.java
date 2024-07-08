@@ -58,11 +58,14 @@ public class Lox {
     private static void run(String source) {
         Scanner scanner = new Scanner(source);
         List<Token> tokens = scanner.scanTokens();
+        if (hadError) {
+            return;
+        }
         Parser parser = new Parser(tokens);
         var expression = parser.parse();
 
         expression.ifPresentOrElse(
-                expr -> System.out.println(new PrettyPrinter().print(expr)),
+                expr -> System.out.println(new Evaluator().evaluate(expr)),
                 () -> System.out.println("This was wrong")
         );
     }
