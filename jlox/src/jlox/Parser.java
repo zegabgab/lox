@@ -15,12 +15,13 @@ class Parser {
     public Optional<Expr> parse() {
         try {
             return Optional.of(expression());
-        } catch (ParseError ignored) {
+        } catch (ParseException except) {
+            Lox.error(except.getToken(), except.getMessage());
             return Optional.empty();
         }
     }
 
-    private Token current() {
+    private Token peek() {
         return tokens.get(current);
     }
 
@@ -36,7 +37,7 @@ class Parser {
         if (isAtEnd()) {
             return false;
         }
-        return current().type.equals(type);
+        return peek().type.equals(type);
     }
 
     private void advance() {
@@ -53,11 +54,11 @@ class Parser {
         return false;
     }
 
-    private Expr expression() {
+    private Expr expression() throws ParseException {
         return equality();
     }
 
-    private Expr equality() {
+    private Expr equality() throws ParseException {
         Expr expr = comparison();
         while (match(BANG_EQUAL, EQUAL_EQUAL)) {
             Token operator = previous();
@@ -67,7 +68,7 @@ class Parser {
         return expr;
     }
 
-    private Expr comparison() {
+    private Expr comparison() throws ParseException {
         Expr expr = term();
         while (match(LESS, LESS_EQUAL, GREATER, GREATER_EQUAL)) {
             Token operator = previous();
@@ -77,7 +78,7 @@ class Parser {
         return expr;
     }
 
-    private Expr term() {
+    private Expr term() throws ParseException {
         Expr expr = factor();
         while (match(PLUS, MINUS)) {
             Token operator = previous();
@@ -87,7 +88,7 @@ class Parser {
         return expr;
     }
 
-    private Expr factor() {
+    private Expr factor() throws ParseException {
         Expr expr = unary();
         while (match(STAR, SLASH)) {
             Token operator = previous();
@@ -97,7 +98,7 @@ class Parser {
         return expr;
     }
 
-    private Expr unary() {
+    private Expr unary() throws ParseException {
         if (match(BANG, MINUS)) {
             return new Expr.Unary(previous(), unary());
         }
@@ -119,7 +120,7 @@ class Parser {
                 return;
             }
 
-            switch (current().type) {
+            switch (peek().type) {
                 case CLASS:
                 case FUN:
                 case VAR:
@@ -139,30 +140,29 @@ class Parser {
             return previous();
         }
 
-        throw error(current(), errorMessage);
+        throw error(peek(), errorMessage);
     }
 
-    private Expr primary() {
+    private Expr primary() throws ParseException {
+        ParseResult result;
         if (match(TRUE)) {
-            return new Expr.Literal(true);
-        }
-        if (match(FALSE)) {
-            return new Expr.Literal(false);
-        }
-        if (match(NIL)) {
-            return new Expr.Literal(null);
-        }
-        if (match(NUMBER)) {
-            return new Expr.Literal(previous().literal);
-        }
-        if (match(STRING)) {
-            return new Expr.Literal(previous().literal);
-        }
-        if (match(LEFT_PAREN)) {
+            result = new ParseSuccess(new Expr.Literal(true), current);
+        } else if (match(FALSE)) {
+            result = new ParseSuccess(new Expr.Literal(false), current);
+        } else if (match(NIL)) {
+            result = new ParseSuccess(new Expr.Literal(null), current);
+        } else if (match(NUMBER)) {
+            result = new ParseSuccess(new Expr.Literal(previous().literal), current);
+        } else if (match(STRING)) {
+            result = new ParseSuccess(new Expr.Literal(previous().literal), current);
+        } else if (match(LEFT_PAREN)) {
             Expr expr = expression();
-            consume(RIGHT_PAREN, "Expected ')'");
-            return new Expr.Grouping(expr);
+            result = check(RIGHT_PAREN)
+                    ? new ParseSuccess(new Expr.Grouping(expr), current + 1)
+                    : new ParseFailure(peek(), "Expected ')'");
+        } else {
+            result = new ParseFailure(peek(), "Expected expression");
         }
-        throw error(current(), "Expected expression");
+        return result.unwrap();
     }
 }
