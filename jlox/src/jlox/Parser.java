@@ -143,26 +143,63 @@ class Parser {
         throw error(peek(), errorMessage);
     }
 
-    private Expr primary() throws ParseException {
-        ParseResult result;
-        if (match(TRUE)) {
-            result = new ParseSuccess(new Expr.Literal(true), current);
-        } else if (match(FALSE)) {
-            result = new ParseSuccess(new Expr.Literal(false), current);
-        } else if (match(NIL)) {
-            result = new ParseSuccess(new Expr.Literal(null), current);
-        } else if (match(NUMBER)) {
-            result = new ParseSuccess(new Expr.Literal(previous().literal), current);
-        } else if (match(STRING)) {
-            result = new ParseSuccess(new Expr.Literal(previous().literal), current);
-        } else if (match(LEFT_PAREN)) {
-            Expr expr = expression();
-            result = check(RIGHT_PAREN)
-                    ? new ParseSuccess(new Expr.Grouping(expr), current + 1)
-                    : new ParseFailure(peek(), "Expected ')'");
-        } else {
-            result = new ParseFailure(peek(), "Expected expression");
+    private ParseResult bool() {
+        switch (peek().type) {
+            case TRUE:
+                advance();
+                return new ParseSuccess(new Expr.Literal(true), current);
+            case FALSE:
+                advance();
+                return new ParseSuccess(new Expr.Literal(false), current);
+            default:
+                return new ParseFailure(peek(), "Expected boolean");
         }
-        return result.unwrap();
+    }
+
+    private ParseResult nil() {
+        if (match(NIL)) {
+            return new ParseSuccess(new Expr.Literal(null), current);
+        }
+        return new ParseFailure(peek(), "Expected nil");
+    }
+
+    private ParseResult number() {
+        if (match(NUMBER)) {
+            return new ParseSuccess(new Expr.Literal(previous().literal), current);
+        }
+        return new ParseFailure(peek(), "Expected number");
+    }
+
+    private ParseResult string() {
+        if (match(STRING)) {
+            return new ParseSuccess(new Expr.Literal(previous().literal), current);
+        }
+        return new ParseFailure(peek(), "Expected string");
+    }
+
+    private ParseResult grouping() {
+        if (match(LEFT_PAREN)) {
+            Expr expr;
+            try {
+                expr = expression();
+            } catch (ParseException e) {
+                return new ParseFailure(e.getToken(), e.getMessage());
+            }
+            if (match(RIGHT_PAREN)) {
+                return new ParseSuccess(new Expr.Grouping(expr), current);
+            }
+            return new ParseFailure(peek(), "Expected grouping");
+        }
+        return new ParseFailure(peek(), "Expected grouping");
+    }
+
+    private Expr primary() throws ParseException {
+        return bool()
+                .or(failure -> nil())
+                .or(failure -> number())
+                .or(failure -> string())
+                .or(failure -> grouping())
+                .or(failure -> new ParseFailure(peek(), "Expected expression"))
+                .unwrap();
     }
 }

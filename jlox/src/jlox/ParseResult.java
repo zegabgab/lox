@@ -1,13 +1,19 @@
 package jlox;
 
-import java.util.function.BiFunction;
+import java.util.function.*;
 
 interface ParseResult {
-    ParseResult map(BiFunction<Integer, ? super Expr, ? extends ParseResult> mapper);
+    ParseResult then(Function<? super ParseSuccess, ? extends ParseResult> next);
+    ParseResult or(Function<? super ParseFailure, ? extends ParseResult> other);
     Expr unwrap() throws ParseException;
 }
 
 final class ParseFailure implements ParseResult {
+    @Override
+    public ParseResult or(Function<? super ParseFailure, ? extends ParseResult> other) {
+        return other.apply(this);
+    }
+
     private final Token token;
     private final String message;
 
@@ -17,7 +23,7 @@ final class ParseFailure implements ParseResult {
     }
 
     @Override
-    public ParseResult map(BiFunction<Integer, ? super Expr, ? extends ParseResult> mapper) {
+    public ParseResult then(Function<? super ParseSuccess, ? extends ParseResult> mapper) {
         return this;
     }
 
@@ -36,9 +42,22 @@ final class ParseSuccess implements ParseResult {
         this.end = end;
     }
 
+    public Expr getResult() {
+        return result;
+    }
+
+    public int getEnd() {
+        return end;
+    }
+
     @Override
-    public ParseResult map(BiFunction<Integer, ? super Expr, ? extends ParseResult> mapper) {
-        return mapper.apply(end, result);
+    public ParseResult then(Function<? super ParseSuccess, ? extends ParseResult> mapper) {
+        return mapper.apply(this);
+    }
+
+    @Override
+    public ParseResult or(Function<? super ParseFailure, ? extends ParseResult> other) {
+        return this;
     }
 
     @Override
