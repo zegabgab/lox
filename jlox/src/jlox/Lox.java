@@ -6,6 +6,7 @@ import java.util.*;
 
 public class Lox {
     private static boolean hadError = false;
+    private static final ExprVisitor<?> visitor = new Evaluator();
 
     public static void main(String[] args) {
         if (args.length > 1) {
@@ -13,7 +14,7 @@ public class Lox {
             System.exit(69);
         } else if (args.length == 1) {
             try {
-                runFile(args[0]);
+                System.exit(runFile(args[0]));
             } catch (IOException e) {
                 System.err.println("Error running from file: " + e.getLocalizedMessage());
                 System.exit(68);
@@ -28,15 +29,12 @@ public class Lox {
         }
     }
 
-    private static void runFile(String path) throws IOException {
+    private static int runFile(String path) throws IOException {
         try (FileInputStream stream = new FileInputStream(path)) {
             String source = new String(stream.readAllBytes(), Charset.defaultCharset());
             run(source);
         }
-
-        if (hadError) {
-            System.exit(66);
-        }
+        return hadError ? 66 : 0;
     }
 
     private static void runPrompt() throws IOException {
@@ -65,7 +63,7 @@ public class Lox {
         var expression = parser.parse();
 
         expression.ifPresentOrElse(
-                expr -> System.out.println(new Evaluator().evaluate(expr)),
+                expr -> System.out.println(expr.accept(visitor)),
                 () -> System.out.println("This was wrong")
         );
     }
