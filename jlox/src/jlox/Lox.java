@@ -6,7 +6,7 @@ import java.util.*;
 
 public class Lox {
     private static boolean hadError = false;
-    private static final ExprVisitor<?> visitor = new Evaluator();
+    private static final ExprVisitor<?> visitor = new Interpreter();
 
     public static void main(String[] args) {
         if (args.length > 1) {

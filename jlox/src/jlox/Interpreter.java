@@ -2,18 +2,20 @@ package jlox;
 
 import java.util.function.*;
 
-class Evaluator implements ExprVisitor<Object> {
+class Interpreter implements ExprVisitor<Object> {
     public Object evaluate(Expr expression) {
         return expression.accept(this);
+    }
+
+    private boolean isTruthy(Object object) {
+        return object != null && !object.equals(false);
     }
 
     @Override
     public Object visit(Expr.Unary unary) {
         if (unary.operator.type.equals(TokenType.BANG)) {
             var operand = unary.operand.accept(this);
-            if (operand instanceof Boolean) {
-                return !(Boolean) operand;
-            }
+            return !isTruthy(operand);
         } else if (unary.operator.type.equals(TokenType.MINUS)) {
             var operand = unary.operand.accept(this);
             if (operand instanceof Double) {
