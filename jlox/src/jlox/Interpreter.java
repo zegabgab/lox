@@ -1,5 +1,6 @@
 package jlox;
 
+import java.util.*;
 import java.util.function.*;
 
 class Interpreter implements ExprVisitor<Object> {
@@ -89,9 +90,9 @@ class Interpreter implements ExprVisitor<Object> {
         TokenType operand = binary.operator.type;
         switch (operand) {
             case EQUAL_EQUAL:
-                return binary.left.accept(this).equals(binary.right.accept(this));
+                return Objects.equals(binary.left.accept(this), binary.right.accept(this));
             case BANG_EQUAL:
-                return !binary.right.accept(this).equals(binary.right.accept(this));
+                return !Objects.equals(binary.left.accept(this), binary.right.accept(this));
             case LESS:
                 return compare(binary, (left, right) -> left < right);
             case LESS_EQUAL:
