@@ -6,7 +6,8 @@ import java.util.*;
 
 public class Lox {
     private static boolean hadError = false;
-    private static final ExprVisitor<?> visitor = new Interpreter();
+    private static boolean hadRuntimeError = false;
+    private static final Interpreter interpreter = new Interpreter();
 
     public static void main(String[] args) {
         if (args.length > 1) {
@@ -34,7 +35,9 @@ public class Lox {
             String source = new String(stream.readAllBytes(), Charset.defaultCharset());
             run(source);
         }
-        return hadError ? 66 : 0;
+        return hadError ? 65
+                : hadRuntimeError ? 70
+                : 0;
     }
 
     private static void runPrompt() throws IOException {
@@ -62,10 +65,7 @@ public class Lox {
         Parser parser = new Parser(tokens);
         var expression = parser.parse();
 
-        expression.ifPresentOrElse(
-                expr -> System.out.println(expr.accept(visitor)),
-                () -> System.out.println("This was wrong")
-        );
+        expression.ifPresent(interpreter::evaluate);
     }
 
     static void error(int lineNo, String message) {
@@ -82,5 +82,10 @@ public class Lox {
     private static void report(int lineNo, String where, String message) {
         System.err.println("[line " + lineNo + "] Error" + where + ": " + message);
         hadError = true;
+    }
+
+    public static void runtimeError(RuntimeError error) {
+        hadRuntimeError = true;
+        System.err.println(error.getLocalizedMessage() + "\n[line " + error.cause.lineNo + "]");
     }
 }
