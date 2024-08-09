@@ -32,11 +32,11 @@ class Interpreter implements ExprVisitor<Object> {
     public Object visit(Expr.Unary unary) {
         if (unary.operator.type.equals(TokenType.BANG)) {
             var operand = unary.operand.accept(this);
-            return (Object) !isTruthy(operand);
+            return !isTruthy(operand);
         } else if (unary.operator.type.equals(TokenType.MINUS)) {
             var operand = unary.operand.accept(this);
             if (operand instanceof Double) {
-                return (Object) (-(Double) operand);
+                return -(Double) operand;
             }
         }
 
@@ -48,7 +48,7 @@ class Interpreter implements ExprVisitor<Object> {
         var right = binary.right.accept(this);
 
         if (left instanceof Double && right instanceof Double) {
-            return (Boolean) comparator.test((Double) left, (Double) right);
+            return comparator.test((Double) left, (Double) right);
         }
 
         return null;
@@ -62,7 +62,7 @@ class Interpreter implements ExprVisitor<Object> {
             return stringify(left) + stringify(right);
         }
         if (left instanceof Double && right instanceof Double) {
-            return (Object) ((Double) left + (Double) right);
+            return (Double) left + (Double) right;
         }
 
         return null;
@@ -73,7 +73,7 @@ class Interpreter implements ExprVisitor<Object> {
         var right = binary.right.accept(this);
 
         if (left instanceof Double && right instanceof Double) {
-            return (Object) ((Double) left - (Double) right);
+            return (Double) left - (Double) right;
         }
 
         return null;
@@ -84,7 +84,7 @@ class Interpreter implements ExprVisitor<Object> {
         var right = binary.right.accept(this);
 
         if (left instanceof Double && right instanceof Double) {
-            return (Object) ((Double) left * (Double) right);
+            return (Double) left * (Double) right;
         }
 
         return null;
@@ -95,7 +95,7 @@ class Interpreter implements ExprVisitor<Object> {
         var right = binary.right.accept(this);
 
         if (left instanceof Double && right instanceof Double && !right.equals(Optional.of(0.))) {
-            return (Object) ((Double) left / (Double) right);
+            return (Double) left / (Double) right;
         }
 
         throw new RuntimeError(binary.operator, "Division requires two numbers");
@@ -106,9 +106,9 @@ class Interpreter implements ExprVisitor<Object> {
         TokenType operand = binary.operator.type;
         switch (operand) {
             case EQUAL_EQUAL:
-                return (Object) Objects.equals(binary.left.accept(this), binary.right.accept(this));
+                return Objects.equals(binary.left.accept(this), binary.right.accept(this));
             case BANG_EQUAL:
-                return (Object) !Objects.equals(binary.left.accept(this), binary.right.accept(this));
+                return !Objects.equals(binary.left.accept(this), binary.right.accept(this));
             case LESS:
                 return compare(binary, (left, right) -> left < right);
             case LESS_EQUAL:
