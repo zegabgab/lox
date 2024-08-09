@@ -13,28 +13,39 @@ public class GenerateAST {
             "Grouping   : Expr expression",
             "Literal    : Object value"
     );
+    static final String STATEMENT_NAME = "Stmt";
+    static final List<String> STATEMENT_CLASSES = List.of(
+            "Expression : Expr expression",
+            "Print      : Expr expression"
+    );
+
     public static void main(String[] args) {
         if (args.length != 1) {
             System.err.println("Usage: GenerateAST dest");
             System.exit(69);
         }
-        try (PrintWriter writer = new PrintWriter(args[0] + "Expr.java")) {
-            generate(EXPRESSION_NAME, EXPRESSION_CLASSES, writer);
+        generate(EXPRESSION_NAME, EXPRESSION_CLASSES, args[0]);
+        generate(STATEMENT_NAME, STATEMENT_CLASSES, args[0]);
+    }
+
+    private static void generate(String baseName, List<String> subclasses, String path) {
+        try (PrintWriter writer = new PrintWriter(path + baseName + ".java")) {
+            generateWithWriter(baseName, subclasses, writer);
         } catch (FileNotFoundException e) {
-            System.err.println("File " + args[0] + " not found: " + e.getLocalizedMessage());
+            System.err.println("File " + path + " not found: " + e.getLocalizedMessage());
             System.exit(68);
         } catch (IOException e) {
-            System.err.println("Failure generating expression classes: " + e.getLocalizedMessage());
+            System.err.println("Failure generating " + baseName + " classes: " + e.getLocalizedMessage());
             System.exit(67);
         }
     }
 
-    private static void generate(String baseName, List<String> subclasses, PrintWriter writer) throws IOException {
+    private static void generateWithWriter(String baseName, List<String> subclasses, PrintWriter writer) throws IOException {
         writer.println("package jlox;");
         writer.println();
         writer.println("abstract class " + baseName + " {");
         writer.println(
-                indentBy(1) + "abstract public <T> T accept(ExprVisitor<T> visitor);");
+                indentBy(1) + "abstract public <T> T accept(" + baseName + "Visitor<T> visitor);");
         for (var subclass : subclasses) {
             generateSubclass(GeneratedClass.make(subclass, baseName), writer);
         }
@@ -62,7 +73,7 @@ public class GenerateAST {
 
         writer.println();
         writer.println(indentBy(2) + "@Override");
-        writer.println(indentBy(2) + "public <T> T accept(ExprVisitor<T> visitor) {");
+        writer.println(indentBy(2) + "public <T> T accept(" + classDescription.baseClass + "Visitor<T> visitor) {");
         writer.println(indentBy(3) + "return visitor.visit(this);");
         writer.println(indentBy(2) + '}');
         writer.println(indentBy(1) + '}');
