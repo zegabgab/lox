@@ -51,7 +51,7 @@ class Interpreter implements ExprVisitor<Object> {
             return comparator.test((Double) left, (Double) right);
         }
 
-        return null;
+        throw new RuntimeError(binary.operator, "Comparison requires two numbers as operands");
     }
 
     private Object add(Expr.Binary binary) {
@@ -65,7 +65,7 @@ class Interpreter implements ExprVisitor<Object> {
             return (Double) left + (Double) right;
         }
 
-        return null;
+        throw new RuntimeError(binary.operator, "Addition requires two numbers or at least one string as operands");
     }
 
     private Object subtract(Expr.Binary binary) {
@@ -76,7 +76,7 @@ class Interpreter implements ExprVisitor<Object> {
             return (Double) left - (Double) right;
         }
 
-        return null;
+        throw new RuntimeError(binary.operator, "Subtraction requires two numbers as operands");
     }
 
     private Object multiply(Expr.Binary binary) {
@@ -87,24 +87,28 @@ class Interpreter implements ExprVisitor<Object> {
             return (Double) left * (Double) right;
         }
 
-        return null;
+        throw new RuntimeError(binary.operator, "Multiplication requires two numbers as operands");
     }
 
-    private Object divide(Expr.Binary binary) throws RuntimeError {
+    private Object divide(Expr.Binary binary) {
         var left = binary.left.accept(this);
         var right = binary.right.accept(this);
 
-        if (left instanceof Double && right instanceof Double && !right.equals(Optional.of(0.))) {
+        if (left instanceof Double && right instanceof Double) {
+            if (right.equals(0.)) {
+                throw new RuntimeError(binary.operator, "Division by zero");
+            }
+
             return (Double) left / (Double) right;
         }
 
-        throw new RuntimeError(binary.operator, "Division requires two numbers");
+        throw new RuntimeError(binary.operator, "Division requires two numbers as operands");
     }
 
     @Override
     public Object visit(Expr.Binary binary) {
-        TokenType operand = binary.operator.type;
-        switch (operand) {
+        TokenType operator = binary.operator.type;
+        switch (operator) {
             case EQUAL_EQUAL:
                 return Objects.equals(binary.left.accept(this), binary.right.accept(this));
             case BANG_EQUAL:
@@ -126,7 +130,8 @@ class Interpreter implements ExprVisitor<Object> {
             case SLASH:
                 return divide(binary);
         }
-        return null;
+
+        throw new RuntimeError(binary.operator, "Operator not supported");
     }
 
     @Override
@@ -138,6 +143,4 @@ class Interpreter implements ExprVisitor<Object> {
     public Object visit(Expr.Literal literal) {
         return literal.value;
     }
-
-
 }
