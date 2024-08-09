@@ -52,7 +52,6 @@ public class GenerateAST {
         writer.println("package jlox;");
         writer.println();
         writer.println("interface " + baseName + "Visitor<T> {");
-        writer.println(indentBy(1) + "T visit(" + baseName + " " + baseName.toLowerCase() + ");");
         for (var subclass : subclasses) {
             writer.println(indentBy(1) + "T visit(" + baseName + "." + subclass.name + " " + subclass.name.toLowerCase() + ");");
         }
