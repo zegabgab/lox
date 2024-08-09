@@ -3,11 +3,12 @@ package jlox;
 import java.util.*;
 import java.util.function.*;
 
-class Interpreter implements ExprVisitor<Object> {
-    public void evaluate(Expr expression) {
+class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
+    public void interpret(List<Stmt> statements) {
         try {
-            Object result = expression.accept(this);
-            System.out.println(stringify(result));
+            for (var statement : statements) {
+                statement.accept(this);
+            }
         } catch (RuntimeError error) {
             Lox.runtimeError(error);
         }
@@ -131,7 +132,7 @@ class Interpreter implements ExprVisitor<Object> {
                 return divide(binary);
         }
 
-        throw new RuntimeError(binary.operator, "Operator not supported");
+        throw new RuntimeError(binary.operator, "Unexpected token");
     }
 
     @Override
@@ -142,5 +143,17 @@ class Interpreter implements ExprVisitor<Object> {
     @Override
     public Object visit(Expr.Literal literal) {
         return literal.value;
+    }
+
+    @Override
+    public Void visit(Stmt.Expression expression) {
+        expression.expression.accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Print print) {
+        System.out.println(stringify(print.expression.accept(this)));
+        return null;
     }
 }

@@ -12,13 +12,28 @@ class Parser {
         this.tokens = tokens;
     }
 
-    public Optional<Expr> parse() {
+    public Optional<List<Stmt>> parse() {
         try {
-            return Optional.of(expression());
+            ArrayList<Stmt> statements = new ArrayList<>();
+            while (!isAtEnd()) {
+                statements.add(statement());
+            }
+            return Optional.of(statements);
         } catch (ParseException except) {
-            Lox.error(except.getToken(), except.getMessage());
             return Optional.empty();
         }
+    }
+
+    private Stmt statement() throws ParseException {
+        if (match(PRINT)) {
+            var expr = expression();
+            consume(SEMICOLON, "Expected semicolon");
+            return new Stmt.Print(expr);
+        }
+
+        var expr = expression();
+        consume(SEMICOLON, "Expected semicolon");
+        return new Stmt.Expression(expr);
     }
 
     private Token peek() {
@@ -30,7 +45,7 @@ class Parser {
     }
 
     private boolean isAtEnd() {
-        return current >= tokens.size();
+        return current >= tokens.size() || peek().type.equals(EOF);
     }
 
     private boolean check(TokenType type) {
@@ -105,11 +120,9 @@ class Parser {
         return primary();
     }
 
-    private static class ParseError extends RuntimeException {}
-
-    private ParseError error(Token token, String message) {
+    private ParseException error(Token token, String message) {
         Lox.error(token, message);
-        return new ParseError();
+        return new ParseException(token, message);
     }
 
     private void synchronize() {
@@ -135,7 +148,7 @@ class Parser {
         }
     }
 
-    private Token consume(TokenType type, String errorMessage) {
+    private Token consume(TokenType type, String errorMessage) throws ParseException {
         if (match(type)) {
             return previous();
         }
@@ -143,63 +156,23 @@ class Parser {
         throw error(peek(), errorMessage);
     }
 
-    private ParseResult bool() {
-        switch (peek().type) {
-            case TRUE:
-                advance();
-                return new ParseSuccess(new Expr.Literal(true), current);
-            case FALSE:
-                advance();
-                return new ParseSuccess(new Expr.Literal(false), current);
-            default:
-                return new ParseFailure(peek(), "Expected boolean");
-        }
-    }
 
-    private ParseResult nil() {
-        if (match(NIL)) {
-            return new ParseSuccess(new Expr.Literal(null), current);
-        }
-        return new ParseFailure(peek(), "Expected nil");
-    }
-
-    private ParseResult number() {
-        if (match(NUMBER)) {
-            return new ParseSuccess(new Expr.Literal(previous().literal), current);
-        }
-        return new ParseFailure(peek(), "Expected number");
-    }
-
-    private ParseResult string() {
-        if (match(STRING)) {
-            return new ParseSuccess(new Expr.Literal(previous().literal), current);
-        }
-        return new ParseFailure(peek(), "Expected string");
-    }
-
-    private ParseResult grouping() {
-        if (match(LEFT_PAREN)) {
-            Expr expr;
-            try {
-                expr = expression();
-            } catch (ParseException e) {
-                return new ParseFailure(e.getToken(), e.getMessage());
-            }
-            if (match(RIGHT_PAREN)) {
-                return new ParseSuccess(new Expr.Grouping(expr), current);
-            }
-            return new ParseFailure(peek(), "Expected grouping");
-        }
-        return new ParseFailure(peek(), "Expected grouping");
-    }
 
     private Expr primary() throws ParseException {
-        return bool()
-                .or(failure -> nil())
-                .or(failure -> number())
-                .or(failure -> string())
-                .or(failure -> grouping())
-                .or(failure -> new ParseFailure(peek(), "Expected expression"))
-                .unwrap();
+        if (match(NIL)) {
+            return new Expr.Literal(null);
+        } if (match(TRUE)) {
+            return new Expr.Literal(true);
+        } if (match (FALSE)) {
+            return new Expr.Literal(false);
+        } if (match(NUMBER, STRING)) {
+            return new Expr.Literal(previous().literal);
+        } if (match(LEFT_PAREN)) {
+            var expr = expression();
+            consume(RIGHT_PAREN, "Expected closing bracket");
+            return new Expr.Grouping(expr);
+        }
+
+        throw error(peek(), "Expected expression");
     }
 }
