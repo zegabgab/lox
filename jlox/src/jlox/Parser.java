@@ -20,6 +20,7 @@ class Parser {
                 statements.add(declaration);
             }
         }
+        current = 0;
         return statements;
     }
 
@@ -48,11 +49,22 @@ class Parser {
             var expr = expression();
             consume(SEMICOLON, "Expected semicolon");
             return new Stmt.Print(expr);
+        } else if (match(LEFT_BRACE)) {
+            return new Stmt.Block(block());
         }
 
         var expr = expression();
         consume(SEMICOLON, "Expected semicolon");
         return new Stmt.Expression(expr);
+    }
+
+    private ArrayList<Stmt> block() throws ParseException {
+        ArrayList<Stmt> statements = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            statements.add(declaration());
+        }
+        consume(RIGHT_BRACE, "Expected '}' after block");
+        return statements;
     }
 
     private Token peek() {

@@ -4,7 +4,7 @@ import java.util.*;
 import java.util.function.*;
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
-    private final Environment environment = new Environment();
+    private Environment environment = new Environment();
 
     public void interpret(List<Stmt> statements) {
         try {
@@ -28,7 +28,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     private boolean isTruthy(Object object) {
-        return object != null && !object.equals(Boolean.FALSE);
+        return object != null && !object.equals(false);
     }
 
     @Override
@@ -110,9 +110,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Object visit(Expr.Assign assign) {
-        var value = assign.value.accept(this);
-        environment.define(assign.name.lexeme, value);
-        return value;
+        return environment.assign(assign.name, assign.value.accept(this));
     }
 
     @Override
@@ -157,6 +155,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     @Override
     public Object visit(Expr.Variable variable) {
         return environment.get(variable.name);
+    }
+
+    @Override
+    public Void visit(Stmt.Block block) {
+        environment = new Environment(environment);
+        try {
+            for (var statement : block.statements) {
+                statement.accept(this);
+            }
+        } finally {
+            environment = environment.outer();
+        }
+        return null;
     }
 
     @Override

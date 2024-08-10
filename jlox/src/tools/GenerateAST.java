@@ -18,6 +18,7 @@ public class GenerateAST {
     );
     static final String STATEMENT_NAME = "Stmt";
     static final List<String> STATEMENT_CLASSES = List.of(
+            "Block      : java.util.List<Stmt> statements",
             "Expression : Expr expression",
             "Print      : Expr expression",
             "Var        : Token name, Expr initializer"

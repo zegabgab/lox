@@ -3,6 +3,19 @@ package jlox;
 abstract class Stmt {
     abstract public <T> T accept(StmtVisitor<T> visitor);
 
+    static class Block extends Stmt {
+        final java.util.List<Stmt> statements;
+
+        public Block(java.util.List<Stmt> statements) {
+            this.statements = statements;
+        }
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Expression extends Stmt {
         final Expr expression;
 
