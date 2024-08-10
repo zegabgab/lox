@@ -10,37 +10,37 @@ class PrettyPrinter implements ExprVisitor<String> {
     }
 
     @Override
-    public String visit(Expr.Unary unary) {
-        return parenthesize(unary.operator.lexeme + " " + unary.operand.accept(this));
+    public String visit(Expr.Unary expr) {
+        return parenthesize(expr.operator.lexeme + " " + expr.operand.accept(this));
     }
 
     @Override
-    public String visit(Expr.Assign assign) {
-        return parenthesize("assign " + assign.name.lexeme + " " + assign.value.accept(this));
+    public String visit(Expr.Assign expr) {
+        return parenthesize("assign " + expr.name.lexeme + " " + expr.value.accept(this));
     }
 
     @Override
-    public String visit(Expr.Logical logical) {
-        return parenthesize(logical.operator.lexeme + " " + logical.left.accept(this) + " " + logical.right.accept(this));
+    public String visit(Expr.Logical expr) {
+        return parenthesize(expr.operator.lexeme + " " + expr.left.accept(this) + " " + expr.right.accept(this));
     }
 
     @Override
-    public String visit(Expr.Binary binary) {
-        return parenthesize(binary.operator.lexeme + " " + binary.left.accept(this) + " " + binary.right.accept(this));
+    public String visit(Expr.Binary expr) {
+        return parenthesize(expr.operator.lexeme + " " + expr.left.accept(this) + " " + expr.right.accept(this));
     }
 
     @Override
-    public String visit(Expr.Grouping grouping) {
-        return parenthesize("group " + grouping.expression.accept(this));
+    public String visit(Expr.Grouping expr) {
+        return parenthesize("group " + expr.expression.accept(this));
     }
 
     @Override
-    public String visit(Expr.Literal literal) {
-        return literal.value == null ? "nil" : literal.value.toString();
+    public String visit(Expr.Literal expr) {
+        return expr.value == null ? "nil" : expr.value.toString();
     }
 
     @Override
-    public String visit(Expr.Variable variable) {
-        return variable.name.lexeme;
+    public String visit(Expr.Variable expr) {
+        return expr.name.lexeme;
     }
 }

@@ -32,12 +32,12 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
-    public Object visit(Expr.Unary unary) {
-        if (unary.operator.type.equals(TokenType.BANG)) {
-            var operand = unary.operand.accept(this);
+    public Object visit(Expr.Unary expr) {
+        if (expr.operator.type.equals(TokenType.BANG)) {
+            var operand = expr.operand.accept(this);
             return !isTruthy(operand);
-        } else if (unary.operator.type.equals(TokenType.MINUS)) {
-            var operand = unary.operand.accept(this);
+        } else if (expr.operator.type.equals(TokenType.MINUS)) {
+            var operand = expr.operand.accept(this);
             if (operand instanceof Double) {
                 return -(Double) operand;
             }
@@ -109,8 +109,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
-    public Object visit(Expr.Assign assign) {
-        return environment.assign(assign.name, assign.value.accept(this));
+    public Object visit(Expr.Assign expr) {
+        return environment.assign(expr.name, expr.value.accept(this));
     }
 
     @Override
@@ -124,54 +124,54 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
-    public Object visit(Expr.Binary binary) {
-        TokenType operator = binary.operator.type;
+    public Object visit(Expr.Binary expr) {
+        TokenType operator = expr.operator.type;
         switch (operator) {
             case EQUAL_EQUAL:
-                return Objects.equals(binary.left.accept(this), binary.right.accept(this));
+                return Objects.equals(expr.left.accept(this), expr.right.accept(this));
             case BANG_EQUAL:
-                return !Objects.equals(binary.left.accept(this), binary.right.accept(this));
+                return !Objects.equals(expr.left.accept(this), expr.right.accept(this));
             case LESS:
-                return compare(binary, (left, right) -> left < right);
+                return compare(expr, (left, right) -> left < right);
             case LESS_EQUAL:
-                return compare(binary, (left, right) -> left <= right);
+                return compare(expr, (left, right) -> left <= right);
             case GREATER:
-                return compare(binary, (left, right) -> left > right);
+                return compare(expr, (left, right) -> left > right);
             case GREATER_EQUAL:
-                return compare(binary, (left, right) -> left >= right);
+                return compare(expr, (left, right) -> left >= right);
             case PLUS:
-                return add(binary);
+                return add(expr);
             case MINUS:
-                return subtract(binary);
+                return subtract(expr);
             case STAR:
-                return multiply(binary);
+                return multiply(expr);
             case SLASH:
-                return divide(binary);
+                return divide(expr);
         }
 
-        throw new RuntimeError(binary.operator, "Unexpected token");
+        throw new RuntimeError(expr.operator, "Unexpected token");
     }
 
     @Override
-    public Object visit(Expr.Grouping grouping) {
-        return grouping.expression.accept(this);
+    public Object visit(Expr.Grouping expr) {
+        return expr.expression.accept(this);
     }
 
     @Override
-    public Object visit(Expr.Literal literal) {
-        return literal.value;
+    public Object visit(Expr.Literal expr) {
+        return expr.value;
     }
 
     @Override
-    public Object visit(Expr.Variable variable) {
-        return environment.get(variable.name);
+    public Object visit(Expr.Variable expr) {
+        return environment.get(expr.name);
     }
 
     @Override
-    public Void visit(Stmt.Block block) {
+    public Void visit(Stmt.Block stmt) {
         environment = new Environment(environment);
         try {
-            for (var statement : block.statements) {
+            for (var statement : stmt.statements) {
                 statement.accept(this);
             }
         } finally {
@@ -181,17 +181,17 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
-    public Void visit(Stmt.Expression expression) {
-        expression.expression.accept(this);
+    public Void visit(Stmt.Expression stmt) {
+        stmt.expression.accept(this);
         return null;
     }
 
     @Override
-    public Void visit(Stmt.If ifStmt) {
-        if (isTruthy(ifStmt.condition.accept(this))) {
-            ifStmt.thenBranch.accept(this);
+    public Void visit(Stmt.If stmt) {
+        if (isTruthy(stmt.condition.accept(this))) {
+            stmt.thenBranch.accept(this);
         } else {
-            ifStmt.elseBranch.accept(this);
+            stmt.elseBranch.accept(this);
         }
         return null;
     }
@@ -205,14 +205,14 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
-    public Void visit(Stmt.Print print) {
-        System.out.println(stringify(print.expression.accept(this)));
+    public Void visit(Stmt.Print stmt) {
+        System.out.println(stringify(stmt.expression.accept(this)));
         return null;
     }
 
     @Override
-    public Void visit(Stmt.Var var) {
-        environment.define(var.name.lexeme, var.initializer.accept(this));
+    public Void visit(Stmt.Var stmt) {
+        environment.define(stmt.name.lexeme, stmt.initializer.accept(this));
         return null;
     }
 }
