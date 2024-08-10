@@ -89,7 +89,22 @@ class Parser {
     }
 
     private Expr expression() throws ParseException {
-        return equality();
+        return assignment();
+    }
+
+    private Expr assignment() throws ParseException {
+        var expr = equality();
+        if (match(EQUAL)) {
+            Token equals = previous();
+            var value = assignment();
+            if (expr instanceof Expr.Variable) {
+                return new Expr.Assign(((Expr.Variable) expr).name, value);
+            }
+
+            error(equals, "Invalid assignment target");
+        }
+
+        return expr;
     }
 
     private Expr equality() throws ParseException {

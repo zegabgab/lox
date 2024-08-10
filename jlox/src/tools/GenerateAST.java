@@ -9,6 +9,7 @@ public class GenerateAST {
     static final List<String> indents = new ArrayList<>();
     static final String EXPRESSION_NAME = "Expr";
     static final List<String> EXPRESSION_CLASSES = List.of(
+            "Assign     : Token name, Expr value",
             "Binary     : Expr left, Token operator, Expr right",
             "Unary      : Token operator, Expr operand",
             "Grouping   : Expr expression",

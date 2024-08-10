@@ -109,6 +109,13 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Object visit(Expr.Assign assign) {
+        var value = assign.value.accept(this);
+        environment.define(assign.name.lexeme, value);
+        return value;
+    }
+
+    @Override
     public Object visit(Expr.Binary binary) {
         TokenType operator = binary.operator.type;
         switch (operator) {

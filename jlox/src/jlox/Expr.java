@@ -3,6 +3,21 @@ package jlox;
 abstract class Expr {
     abstract public <T> T accept(ExprVisitor<T> visitor);
 
+    static class Assign extends Expr {
+        final Token name;
+        final Expr value;
+
+        public Assign(Token name, Expr value) {
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Binary extends Expr {
         final Expr left;
         final Token operator;
