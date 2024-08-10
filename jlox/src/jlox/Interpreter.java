@@ -4,6 +4,8 @@ import java.util.*;
 import java.util.function.*;
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
+    private final Environment environment = new Environment();
+
     public void interpret(List<Stmt> statements) {
         try {
             for (var statement : statements) {
@@ -146,6 +148,11 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Object visit(Expr.Variable variable) {
+        return environment.get(variable.name);
+    }
+
+    @Override
     public Void visit(Stmt.Expression expression) {
         expression.expression.accept(this);
         return null;
@@ -154,6 +161,12 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     @Override
     public Void visit(Stmt.Print print) {
         System.out.println(stringify(print.expression.accept(this)));
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Var var) {
+        environment.define(var.name.lexeme, var.initializer.accept(this));
         return null;
     }
 }

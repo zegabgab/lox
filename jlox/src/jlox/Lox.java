@@ -65,7 +65,7 @@ public class Lox {
         Parser parser = new Parser(tokens);
         var result = parser.parse();
 
-        result.ifPresent(interpreter::interpret);
+        interpreter.interpret(result);
     }
 
     static void error(int lineNo, String message) {

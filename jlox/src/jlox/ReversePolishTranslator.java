@@ -24,4 +24,9 @@ class ReversePolishTranslator implements ExprVisitor<String> {
     public String visit(Expr.Literal literal) {
         return literal.value != null ? literal.value.toString() : "nil";
     }
+
+    @Override
+    public String visit(Expr.Variable variable) {
+        return null;
+    }
 }

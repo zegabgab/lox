@@ -28,4 +28,9 @@ class PrettyPrinter implements ExprVisitor<String> {
     public String visit(Expr.Literal literal) {
         return literal.value == null ? "nil" : literal.value.toString();
     }
+
+    @Override
+    public String visit(Expr.Variable variable) {
+        return variable.name.lexeme;
+    }
 }
