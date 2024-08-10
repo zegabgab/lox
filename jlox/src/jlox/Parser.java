@@ -5,6 +5,11 @@ import java.util.*;
 import static jlox.TokenType.*;
 
 class Parser {
+    private static final Stmt EMPTY_STATEMENT = new Stmt.Expression(new Expr.Literal(null));
+    private static final Expr NIL_EXPRESSION = new Expr.Literal(null);
+    private static final Expr TRUE_EXPRESSION = new Expr.Literal(true);
+    private static final Expr FALSE_EXPRESSION = new Expr.Literal(false);
+
     private final List<Token> tokens;
     int current = 0;
 
@@ -36,7 +41,7 @@ class Parser {
     private Stmt varDeclaration() throws  ParseException {
         var token = consume(IDENTIFIER, "Expected identifier");
         if (match(SEMICOLON)) {
-            return new Stmt.Var(token, new Expr.Literal(null));
+            return new Stmt.Var(token, NIL_EXPRESSION);
         }
         consume(EQUAL, "Expected '='");
         var expression = expression();
@@ -51,11 +56,60 @@ class Parser {
             return new Stmt.Print(expr);
         } else if (match(LEFT_BRACE)) {
             return new Stmt.Block(block());
+        } else if (match(IF)) {
+            return ifStatement();
+        } else if (match(WHILE)) {
+            return whileStatement();
+        } else if (match(FOR)) {
+            return forStatement();
         }
 
+        return expressionStatement();
+    }
+
+    private Stmt expressionStatement() throws ParseException {
         var expr = expression();
         consume(SEMICOLON, "Expected semicolon");
         return new Stmt.Expression(expr);
+    }
+
+    private Stmt forStatement() throws ParseException {
+        consume(LEFT_PAREN, "Expected '(' after 'for'");
+        var initializer = match(SEMICOLON) ? EMPTY_STATEMENT
+                : match(VAR) ? varDeclaration()
+                : expressionStatement();
+        var condition = check(SEMICOLON) ? TRUE_EXPRESSION : expression();
+        consume(SEMICOLON, "Expected semicolon");
+        var increment = check(RIGHT_PAREN) ? NIL_EXPRESSION : expression();
+        consume(RIGHT_PAREN, "Expected ')' after for header");
+        var body = statement();
+        return new Stmt.Block(List.of(
+                initializer,
+                new Stmt.While(condition, new Stmt.Block(List.of(
+                        body,
+                        new Stmt.Expression(increment)
+                )))
+        ));
+    }
+
+    private Stmt whileStatement() throws ParseException {
+        consume(LEFT_PAREN, "Expected '(' after 'while'");
+        var condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after while condition");
+        var body = statement();
+        return new Stmt.While(condition, body);
+    }
+
+    private Stmt ifStatement() throws ParseException {
+        consume(LEFT_PAREN, "Expected '(' after 'if'");
+        var condition = expression();
+        consume(RIGHT_PAREN, "Expected ')' after if condition");
+        var thenStatement = statement();
+        if (match(ELSE)) {
+            var elseStatement = statement();
+            return new Stmt.If(condition, thenStatement, elseStatement);
+        }
+        return new Stmt.If(condition, thenStatement, EMPTY_STATEMENT);
     }
 
     private ArrayList<Stmt> block() throws ParseException {
@@ -105,7 +159,7 @@ class Parser {
     }
 
     private Expr assignment() throws ParseException {
-        var expr = equality();
+        var expr = or();
         if (match(EQUAL)) {
             Token equals = previous();
             var value = assignment();
@@ -114,6 +168,28 @@ class Parser {
             }
 
             error(equals, "Invalid assignment target");
+        }
+
+        return expr;
+    }
+
+    private Expr or() throws ParseException {
+        var expr = and();
+        while (match(OR)) {
+            var operator = previous();
+            var right = and();
+            expr = new Expr.Logical(expr, operator, right);
+        }
+
+        return expr;
+    }
+
+    private Expr and() throws ParseException {
+        var expr = equality();
+        while (match(AND)) {
+            var operator = previous();
+            var right = equality();
+            expr = new Expr.Logical(expr, operator, right);
         }
 
         return expr;
@@ -205,13 +281,13 @@ class Parser {
 
     private Expr primary() throws ParseException {
         if (match(NIL)) {
-            return new Expr.Literal(null);
+            return NIL_EXPRESSION;
         }
         if (match(TRUE)) {
-            return new Expr.Literal(true);
+            return TRUE_EXPRESSION;
         }
         if (match(FALSE)) {
-            return new Expr.Literal(false);
+            return FALSE_EXPRESSION;
         }
         if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);

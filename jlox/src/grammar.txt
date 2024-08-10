@@ -1,13 +1,18 @@
 program        -> declaration* EOF ;
 declaration    -> varDeclaration | statement ;
 varDeclaration -> "var" IDENTIFIER ( "=" expression)? ";" ;
-statement      -> printStmt | exprStmt | block ;
+statement      -> printStmt | exprStmt | block | if | while | for ;
 printStmt      -> "print" expression ";" ;
 exprStmt       -> expression ";" ;
 block          -> "{" declaration* "}" ;
+if             -> "if" "(" expression ")" statement ( "else" statement )? ;
+while          -> "while" "(" expression ")" statement ;
+for            -> "for" "(" ( varDeclaration | exprStmt | ";" ) expression? ";" expression? ")" statement ;
 
 expression     -> assignment ;
-assignment     -> IDENTIFIER "=" assignment | equality ;
+assignment     -> IDENTIFIER "=" assignment | or ;
+or             -> and ( "or" and )* ;
+and            -> equality ( "and" equality)* ;
 equality       -> comparison ( ( "==" | "!=" ) comparison )* ;
 comparison     -> term ( ( "<" | "<=" | ">" | ">=" ) term )* ;
 term           -> factor ( ( "+"  | "-" ) factor )* ;

@@ -16,7 +16,12 @@ class PrettyPrinter implements ExprVisitor<String> {
 
     @Override
     public String visit(Expr.Assign assign) {
-        return "assign (" + assign.name.lexeme + " " + assign.value.accept(this) + ")";
+        return parenthesize("assign " + assign.name.lexeme + " " + assign.value.accept(this));
+    }
+
+    @Override
+    public String visit(Expr.Logical logical) {
+        return parenthesize(logical.operator.lexeme + " " + logical.left.accept(this) + " " + logical.right.accept(this));
     }
 
     @Override

@@ -114,6 +114,16 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Object visit(Expr.Logical expr) {
+        var left = expr.left.accept(this);
+        if (expr.operator.type.equals(TokenType.AND)) {
+            return isTruthy(left) ? expr.right.accept(this) : left;
+        }
+
+        return isTruthy(left) ? left : expr.right.accept(this);
+    }
+
+    @Override
     public Object visit(Expr.Binary binary) {
         TokenType operator = binary.operator.type;
         switch (operator) {
@@ -173,6 +183,24 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     @Override
     public Void visit(Stmt.Expression expression) {
         expression.expression.accept(this);
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.If ifStmt) {
+        if (isTruthy(ifStmt.condition.accept(this))) {
+            ifStmt.thenBranch.accept(this);
+        } else {
+            ifStmt.elseBranch.accept(this);
+        }
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.While stmt) {
+        while (isTruthy(stmt.condition.accept(this))) {
+            stmt.body.accept(this);
+        }
         return null;
     }
 

@@ -10,6 +10,7 @@ public class GenerateAST {
     static final String EXPRESSION_NAME = "Expr";
     static final List<String> EXPRESSION_CLASSES = List.of(
             "Assign     : Token name, Expr value",
+            "Logical    : Expr left, Token operator, Expr right",
             "Binary     : Expr left, Token operator, Expr right",
             "Unary      : Token operator, Expr operand",
             "Grouping   : Expr expression",
@@ -20,6 +21,8 @@ public class GenerateAST {
     static final List<String> STATEMENT_CLASSES = List.of(
             "Block      : java.util.List<Stmt> statements",
             "Expression : Expr expression",
+            "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
+            "While      : Expr condition, Stmt body",
             "Print      : Expr expression",
             "Var        : Token name, Expr initializer"
     );
@@ -57,7 +60,7 @@ public class GenerateAST {
         writer.println();
         writer.println("interface " + baseName + "Visitor<T> {");
         for (var subclass : subclasses) {
-            writer.println(indentBy(1) + "T visit(" + baseName + "." + subclass.name + " " + subclass.name.toLowerCase() + ");");
+            writer.println(indentBy(1) + "T visit(" + baseName + "." + subclass.name + " " + baseName.toLowerCase() + ");");
         }
         writer.println("}");
     }
