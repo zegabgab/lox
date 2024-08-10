@@ -189,6 +189,9 @@ class Parser {
         if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
         }
+        if (match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
+        }
         if (match(LEFT_PAREN)) {
             var expr = expression();
             consume(RIGHT_PAREN, "Expected closing bracket");
