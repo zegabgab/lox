@@ -1,10 +1,15 @@
-69 / 2;
-
-
-
-
-
-
-
-print 69 / -3;
-print "done :P";
+var a = 1;
+{
+  var a = a + 2;
+  print "Outer a before = " + a;    // 3
+  {
+    var a = a * 23;
+    print "Inner a = " + a;         // 69
+    {
+      a = 420;
+    }
+    print "Inner mutated a = " + a; // 420
+  }
+  print "Outer a after = " + a;     // 3
+}
+print "Global a = " + a;            // 1
