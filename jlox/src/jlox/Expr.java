@@ -60,4 +60,17 @@ abstract class Expr {
             return visitor.visit(this);
         }
     }
+
+    static class Variable extends Expr {
+        final Token name;
+
+        public Variable(Token name) {
+            this.name = name;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
 }

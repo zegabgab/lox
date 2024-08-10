@@ -12,12 +12,14 @@ public class GenerateAST {
             "Binary     : Expr left, Token operator, Expr right",
             "Unary      : Token operator, Expr operand",
             "Grouping   : Expr expression",
-            "Literal    : Object value"
+            "Literal    : Object value",
+            "Variable   : Token name"
     );
     static final String STATEMENT_NAME = "Stmt";
     static final List<String> STATEMENT_CLASSES = List.of(
             "Expression : Expr expression",
-            "Print      : Expr expression"
+            "Print      : Expr expression",
+            "Var        : Token name, Expr initializer"
     );
 
     public static void main(String[] args) {

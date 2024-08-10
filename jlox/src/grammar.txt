@@ -1,4 +1,5 @@
-program        -> statement* EOF ;
+program        -> declaration* EOF ;
+declaration    -> varDeclaration | statement ;
 statement      -> printStmt | exprStmt ;
 printStmt      -> "print" expression ";" ;
 exprStmt       -> expression ";" ;

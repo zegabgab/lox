@@ -28,4 +28,19 @@ abstract class Stmt {
             return visitor.visit(this);
         }
     }
+
+    static class Var extends Stmt {
+        final Token name;
+        final Expr initializer;
+
+        public Var(Token name, Expr initializer) {
+            this.name = name;
+            this.initializer = initializer;
+        }
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
 }

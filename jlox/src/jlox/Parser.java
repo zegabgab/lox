@@ -12,16 +12,35 @@ class Parser {
         this.tokens = tokens;
     }
 
-    public Optional<List<Stmt>> parse() {
-        try {
-            ArrayList<Stmt> statements = new ArrayList<>();
-            while (!isAtEnd()) {
-                statements.add(statement());
+    public List<Stmt> parse() {
+        ArrayList<Stmt> statements = new ArrayList<>();
+        while (!isAtEnd()) {
+            var declaration = declaration();
+            if (declaration != null) {
+                statements.add(declaration);
             }
-            return Optional.of(statements);
-        } catch (ParseException except) {
-            return Optional.empty();
         }
+        return statements;
+    }
+
+    private Stmt declaration() {
+        try {
+            return match(VAR) ? varDeclaration() : statement();
+        } catch (ParseException e) {
+            synchronize();
+            return null;
+        }
+    }
+
+    private Stmt varDeclaration() throws  ParseException {
+        var token = consume(IDENTIFIER, "Expected identifier");
+        if (match(SEMICOLON)) {
+            return new Stmt.Var(token, new Expr.Literal(null));
+        }
+        consume(EQUAL, "Expected '='");
+        var expression = expression();
+        consume(SEMICOLON, "Expected semicolon");
+        return new Stmt.Var(token, expression);
     }
 
     private Stmt statement() throws ParseException {
@@ -157,17 +176,20 @@ class Parser {
     }
 
 
-
     private Expr primary() throws ParseException {
         if (match(NIL)) {
             return new Expr.Literal(null);
-        } if (match(TRUE)) {
+        }
+        if (match(TRUE)) {
             return new Expr.Literal(true);
-        } if (match (FALSE)) {
+        }
+        if (match(FALSE)) {
             return new Expr.Literal(false);
-        } if (match(NUMBER, STRING)) {
+        }
+        if (match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
-        } if (match(LEFT_PAREN)) {
+        }
+        if (match(LEFT_PAREN)) {
             var expr = expression();
             consume(RIGHT_PAREN, "Expected closing bracket");
             return new Expr.Grouping(expr);
