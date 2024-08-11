@@ -5,11 +5,12 @@ import java.util.function.*;
 import java.util.stream.*;
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
-    final Environment GLOBALS = new Environment();
-    private Environment environment = GLOBALS;
+    private final Environment globals = new Environment();
+    private Environment environment = globals;
+    private final HashMap<Expr, Integer> locals = new HashMap<>();
 
     public Interpreter() {
-        GLOBALS.define("clock", new Clock());
+        globals.define("clock", new Clock());
     }
 
     public void interpret(List<Stmt> statements) {
@@ -137,7 +138,11 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Object visit(Expr.Assign expr) {
-        return environment.assign(expr.name, expr.value.accept(this));
+        var value = expr.value.accept(this);
+        Integer distance = locals.get(expr);
+
+        return distance != null ? environment.assignAt(distance, expr.name, value)
+                : globals.assign(expr.name, value);
     }
 
     @Override
@@ -191,7 +196,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Object visit(Expr.Variable expr) {
-        return environment.get(expr.name);
+        Integer distance = locals.get(expr);
+        return distance != null ? environment.getAt(distance, expr.name.lexeme)
+                : globals.get(expr.name);
     }
 
     public void executeBlock(List<Stmt> statements, Environment environment) {
@@ -257,5 +264,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     public Void visit(Stmt.Function stmt) {
         environment.define(stmt.name.lexeme, new LoxFunction(stmt, environment));
         return null;
+    }
+
+    public void resolve(Expr expr, int depth) {
+        locals.put(expr, depth);
     }
 }

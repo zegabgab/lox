@@ -62,10 +62,20 @@ public class Lox {
         if (hadError) {
             return;
         }
-        Parser parser = new Parser(tokens);
-        var result = parser.parse();
 
-        interpreter.interpret(result);
+        Parser parser = new Parser(tokens);
+        var statements = parser.parse();
+        if (hadError) {
+            return;
+        }
+
+        var resolver = new Resolver(interpreter);
+        resolver.resolve(statements);
+        if (hadError) {
+            return;
+        }
+
+        interpreter.interpret(statements);
     }
 
     static void error(int lineNo, String message) {

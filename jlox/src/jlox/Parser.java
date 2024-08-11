@@ -12,7 +12,6 @@ class Parser {
 
     private final List<Token> tokens;
     int current = 0;
-    private int functionDepth = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -47,13 +46,11 @@ class Parser {
     }
 
     private Stmt funDeclaration(String kind) throws ParseException {
-        functionDepth++;
         var name = consume(IDENTIFIER, "Expected " + kind + " name");
         consume(LEFT_PAREN, "Expected '(' after function name");
         var parameters = parameterList();
         consume(LEFT_BRACE, "Expected '{' after parameter list");
         var body = block();
-        functionDepth--;
 
         return new Stmt.Function(name, parameters, body);
     }
@@ -113,17 +110,10 @@ class Parser {
     }
 
     private Stmt returnStatement() throws ParseException {
-        if (!insideFunction()) {
-            throw error(previous(), "Return statement only allowed inside functions");
-        }
         var token = previous();
         var value = check(SEMICOLON) ? NIL_EXPRESSION : expression();
         consume(SEMICOLON, "Expected semicolon after return value");
         return new Stmt.Return(token, value);
-    }
-
-    private boolean insideFunction() {
-        return functionDepth > 0;
     }
 
     private Stmt expressionStatement() throws ParseException {

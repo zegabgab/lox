@@ -45,4 +45,22 @@ class Environment {
     public Environment outer() {
         return outer;
     }
+
+    private Environment ancestor(int distance) {
+        Environment ancestor = this;
+        for (int i = 0; i < distance; i++) {
+            ancestor = ancestor.outer;
+        }
+
+        return ancestor;
+    }
+
+    public Object getAt(int distance, String name) {
+        return ancestor(distance).values.get(name);
+    }
+
+    public Object assignAt(Integer distance, Token name, Object value) {
+        ancestor(distance).values.put(name.lexeme, value);
+        return value;
+    }
 }
