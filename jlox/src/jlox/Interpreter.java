@@ -2,9 +2,15 @@ package jlox;
 
 import java.util.*;
 import java.util.function.*;
+import java.util.stream.*;
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
-    private Environment environment = new Environment();
+    final Environment GLOBALS = new Environment();
+    private Environment environment = GLOBALS;
+
+    public Interpreter() {
+        GLOBALS.define("clock", new Clock());
+    }
 
     public void interpret(List<Stmt> statements) {
         try {
@@ -44,6 +50,27 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         }
 
         return null;
+    }
+
+    @Override
+    public Object visit(Expr.Call expr) {
+        var callee = expr.callee.accept(this);
+        List<Object> arguments = expr.arguments.stream()
+                .map(argument -> argument.accept(this)).collect(Collectors.toList());
+
+        if (!(callee instanceof LoxCallable)) {
+            throw new RuntimeError(expr.parens, "Can only call functions and classes");
+        }
+
+        var function = (LoxCallable) callee;
+        if (function.arity() != arguments.size()) {
+            throw new RuntimeError(expr.parens, "Expected " +
+                    function.arity() +
+                    " arguments but got " +
+                    arguments.size());
+        }
+
+        return function.call(this, arguments);
     }
 
     private Boolean compare(Expr.Binary binary, BiPredicate<Double, Double> comparator) {
@@ -167,16 +194,21 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return environment.get(expr.name);
     }
 
-    @Override
-    public Void visit(Stmt.Block stmt) {
-        environment = new Environment(environment);
+    public void executeBlock(List<Stmt> statements, Environment environment) {
+        Environment previous = this.environment;
         try {
-            for (var statement : stmt.statements) {
+            this.environment = environment;
+            for (var statement : statements) {
                 statement.accept(this);
             }
         } finally {
-            environment = environment.outer();
+            this.environment = previous;
         }
+    }
+
+    @Override
+    public Void visit(Stmt.Block stmt) {
+        executeBlock(stmt.statements, new Environment(environment));
         return null;
     }
 
@@ -211,8 +243,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Void visit(Stmt.Return stmt) {
+        throw new Return(stmt.value.accept(this));
+    }
+
+    @Override
     public Void visit(Stmt.Var stmt) {
         environment.define(stmt.name.lexeme, stmt.initializer.accept(this));
+        return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Function stmt) {
+        environment.define(stmt.name.lexeme, new LoxFunction(stmt, environment));
         return null;
     }
 }

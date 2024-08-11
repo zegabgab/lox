@@ -67,6 +67,23 @@ abstract class Expr {
         }
     }
 
+    static class Call extends Expr {
+        final Expr callee;
+        final Token parens;
+        final java.util.List<Expr> arguments;
+
+        public Call(Expr callee, Token parens, java.util.List<Expr> arguments) {
+            this.callee = callee;
+            this.parens = parens;
+            this.arguments = arguments;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Grouping extends Expr {
         final Expr expression;
 

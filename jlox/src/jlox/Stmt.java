@@ -74,6 +74,21 @@ abstract class Stmt {
         }
     }
 
+    static class Return extends Stmt {
+        final Token keyword;
+        final Expr value;
+
+        public Return(Token keyword, Expr value) {
+            this.keyword = keyword;
+            this.value = value;
+        }
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Var extends Stmt {
         final Token name;
         final Expr initializer;
@@ -81,6 +96,23 @@ abstract class Stmt {
         public Var(Token name, Expr initializer) {
             this.name = name;
             this.initializer = initializer;
+        }
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    static class Function extends Stmt {
+        final Token name;
+        final java.util.List<Token> parameters;
+        final java.util.List<Stmt> body;
+
+        public Function(Token name, java.util.List<Token> parameters, java.util.List<Stmt> body) {
+            this.name = name;
+            this.parameters = parameters;
+            this.body = body;
         }
 
         @Override

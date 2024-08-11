@@ -1,5 +1,7 @@
 package jlox;
 
+import java.util.stream.*;
+
 class PrettyPrinter implements ExprVisitor<String> {
     private static String parenthesize(String expression) {
         return "(" + expression + ")";
@@ -12,6 +14,14 @@ class PrettyPrinter implements ExprVisitor<String> {
     @Override
     public String visit(Expr.Unary expr) {
         return parenthesize(expr.operator.lexeme + " " + expr.operand.accept(this));
+    }
+
+    @Override
+    public String visit(Expr.Call expr) {
+        return parenthesize("call " + expr.callee.accept(this) + ": " +
+                expr.arguments.stream()
+                        .map(expression -> expression.accept(this))
+                        .collect(Collectors.toList()));
     }
 
     @Override

@@ -12,6 +12,7 @@ class Parser {
 
     private final List<Token> tokens;
     int current = 0;
+    private int functionDepth = 0;
 
     Parser(List<Token> tokens) {
         this.tokens = tokens;
@@ -31,11 +32,48 @@ class Parser {
 
     private Stmt declaration() {
         try {
-            return match(VAR) ? varDeclaration() : statement();
+            if (match(VAR)) {
+                return varDeclaration();
+            }
+            if (match(FUN)) {
+                return funDeclaration("function");
+            }
+
+            return statement();
         } catch (ParseException e) {
             synchronize();
             return null;
         }
+    }
+
+    private Stmt funDeclaration(String kind) throws ParseException {
+        functionDepth++;
+        var name = consume(IDENTIFIER, "Expected " + kind + " name");
+        consume(LEFT_PAREN, "Expected '(' after function name");
+        var parameters = parameterList();
+        consume(LEFT_BRACE, "Expected '{' after parameter list");
+        var body = block();
+        functionDepth--;
+
+        return new Stmt.Function(name, parameters, body);
+    }
+
+    private List<Token> parameterList() throws ParseException {
+        ArrayList<Token> parameters = new ArrayList<>();
+        if (match(RIGHT_PAREN)) {
+            return parameters;
+        }
+
+        parameters.add(consume(IDENTIFIER, "Expected identifier"));
+        while (!match(RIGHT_PAREN)) {
+            consume(COMMA, "Expected ','");
+            if (parameters.size() >= 255) {
+                error(peek(), "Can't have more than 255 parameters");
+            }
+            parameters.add(consume(IDENTIFIER, "Expected identifier"));
+        }
+
+        return parameters;
     }
 
     private Stmt varDeclaration() throws  ParseException {
@@ -54,17 +92,38 @@ class Parser {
             var expr = expression();
             consume(SEMICOLON, "Expected semicolon");
             return new Stmt.Print(expr);
-        } else if (match(LEFT_BRACE)) {
+        }
+        if (match(LEFT_BRACE)) {
             return new Stmt.Block(block());
-        } else if (match(IF)) {
+        }
+        if (match(IF)) {
             return ifStatement();
-        } else if (match(WHILE)) {
+        }
+        if (match(WHILE)) {
             return whileStatement();
-        } else if (match(FOR)) {
+        }
+        if (match(FOR)) {
             return forStatement();
+        }
+        if (match(RETURN)) {
+            return returnStatement();
         }
 
         return expressionStatement();
+    }
+
+    private Stmt returnStatement() throws ParseException {
+        if (!insideFunction()) {
+            throw error(previous(), "Return statement only allowed inside functions");
+        }
+        var token = previous();
+        var value = check(SEMICOLON) ? NIL_EXPRESSION : expression();
+        consume(SEMICOLON, "Expected semicolon after return value");
+        return new Stmt.Return(token, value);
+    }
+
+    private boolean insideFunction() {
+        return functionDepth > 0;
     }
 
     private Stmt expressionStatement() throws ParseException {
@@ -239,7 +298,35 @@ class Parser {
         if (match(BANG, MINUS)) {
             return new Expr.Unary(previous(), unary());
         }
-        return primary();
+        return call();
+    }
+
+    private Expr call() throws ParseException {
+        var expr = primary();
+        while (match(LEFT_PAREN)) {
+            var parens = previous();
+            var arguments = argumentList();
+            expr = new Expr.Call(expr, parens, arguments);
+        }
+
+        return expr;
+    }
+
+    private ArrayList<Expr> argumentList() throws ParseException {
+        var arguments = new ArrayList<Expr>();
+        if (match(RIGHT_PAREN)) {
+            return arguments;
+        }
+        arguments.add(expression());
+        while (!match(RIGHT_PAREN)) {
+            consume(COMMA, "Expected ','");
+            arguments.add(expression());
+            if (arguments.size() > 255) {
+                error(peek(), "Can't have more than 255 arguments");
+            }
+        }
+
+        return arguments;
     }
 
     private ParseException error(Token token, String message) {

@@ -13,6 +13,7 @@ public class GenerateAST {
             "Logical    : Expr left, Token operator, Expr right",
             "Binary     : Expr left, Token operator, Expr right",
             "Unary      : Token operator, Expr operand",
+            "Call       : Expr callee, Token parens, java.util.List<Expr> arguments",
             "Grouping   : Expr expression",
             "Literal    : Object value",
             "Variable   : Token name"
@@ -24,7 +25,9 @@ public class GenerateAST {
             "If         : Expr condition, Stmt thenBranch, Stmt elseBranch",
             "While      : Expr condition, Stmt body",
             "Print      : Expr expression",
-            "Var        : Token name, Expr initializer"
+            "Return     : Token keyword, Expr value",
+            "Var        : Token name, Expr initializer",
+            "Function   : Token name, java.util.List<Token> parameters, java.util.List<Stmt> body"
     );
 
     public static void main(String[] args) {
