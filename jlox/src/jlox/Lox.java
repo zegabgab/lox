@@ -8,12 +8,14 @@ public class Lox {
     private static boolean hadError = false;
     private static boolean hadRuntimeError = false;
     private static final Interpreter interpreter = new Interpreter();
+    private static boolean repl;
 
     public static void main(String[] args) {
         if (args.length > 1) {
             System.err.println("Usage: jlox [sourcefile]");
             System.exit(69);
         } else if (args.length == 1) {
+            repl = false;
             try {
                 System.exit(runFile(args[0]));
             } catch (IOException e) {
@@ -21,6 +23,7 @@ public class Lox {
                 System.exit(68);
             }
         } else {
+            repl = true;
             try {
                 runPrompt();
             } catch (IOException e) {
@@ -89,13 +92,23 @@ public class Lox {
         report(token.lineNo, where, message);
     }
 
+    private static void reportError(String message) {
+        if (repl) {
+            System.out.println(Ansi.magenta() + message + Ansi.reset());
+        } else {
+            System.err.println(message);
+        }
+    }
+
     private static void report(int lineNo, String where, String message) {
-        System.err.println("[line " + lineNo + "] Error" + where + ": " + message);
         hadError = true;
+        String errorMessage = "[line " + lineNo + "] Error" + where + ": " + message;
+        reportError(errorMessage);
     }
 
     public static void runtimeError(RuntimeError error) {
         hadRuntimeError = true;
-        System.err.println(error.getLocalizedMessage() + "\n[line " + error.cause.lineNo + "]");
+        String errorMessage = error.getLocalizedMessage() + "\n[line " + error.cause.lineNo + "]";
+        reportError(errorMessage);
     }
 }
