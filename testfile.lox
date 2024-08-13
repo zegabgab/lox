@@ -1,12 +1,14 @@
-var f;
-
-{
+fun make() {
     var a = "this one :)";
-    fun function() {
-        print a;
-    }
+    {
+        fun function() {
+            print a;
+        }
+        var a = "not this one";
 
-    f = function;
+        return function;
+    }
 }
-var a = "not this one";
-f();
+
+var a = "not this one either";
+make()();
