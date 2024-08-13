@@ -1,12 +1,12 @@
-fun makeCounter() {
-  var i = 0;
-  fun count() {
-    i = i + 1;
-    print i;
-  }
+var f;
 
-  return count;
+{
+    var a = "this one :)";
+    fun function() {
+        print a;
+    }
+
+    f = function;
 }
-
-var c = makeCounter();
-for (var i = 10; i > 0; i = i - 1) c();
+var a = "not this one";
+f();

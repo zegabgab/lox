@@ -5,9 +5,19 @@ import java.util.function.*;
 import java.util.stream.*;
 
 class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
-    private final Environment globals = new Environment();
-    private Environment environment = globals;
-    private final HashMap<Expr, Integer> locals = new HashMap<>();
+    private final GlobalEnvironment globals = new GlobalEnvironment();
+    private Environment environment = null;
+    private final HashMap<Expr, VarCoordinates> locals = new HashMap<>();
+
+    private static class VarCoordinates {
+        final int distance;
+        final int index;
+
+        private VarCoordinates(int distance, int index) {
+            this.distance = distance;
+            this.index = index;
+        }
+    }
 
     public Interpreter() {
         globals.define("clock", new Clock());
@@ -139,9 +149,9 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     @Override
     public Object visit(Expr.Assign expr) {
         var value = expr.value.accept(this);
-        Integer distance = locals.get(expr);
+        var coordinates = locals.get(expr);
 
-        return distance != null ? environment.assignAt(distance, expr.name, value)
+        return coordinates != null ? environment.assignAt(coordinates.distance, coordinates.index, value)
                 : globals.assign(expr.name, value);
     }
 
@@ -196,8 +206,8 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Object visit(Expr.Variable expr) {
-        Integer distance = locals.get(expr);
-        return distance != null ? environment.getAt(distance, expr.name.lexeme)
+        var coordinates = locals.get(expr);
+        return coordinates != null ? environment.getAt(coordinates.distance, coordinates.index)
                 : globals.get(expr.name);
     }
 
@@ -256,17 +266,27 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Void visit(Stmt.Var stmt) {
-        environment.define(stmt.name.lexeme, stmt.initializer.accept(this));
+        var value = stmt.initializer.accept(this);
+        if (environment != null) {
+            environment.define(value);
+        } else {
+            globals.define(stmt.name.lexeme, value);
+        }
         return null;
     }
 
     @Override
     public Void visit(Stmt.Function stmt) {
-        environment.define(stmt.name.lexeme, new LoxFunction(stmt, environment));
+        var function = new LoxFunction(stmt, environment);
+        if (environment != null) {
+            environment.define(function);
+        } else {
+            globals.define(stmt.name.lexeme, function);
+        }
         return null;
     }
 
-    public void resolve(Expr expr, int depth) {
-        locals.put(expr, depth);
+    public void resolve(Expr expr, int depth, int index) {
+        locals.put(expr, new VarCoordinates(depth, index));
     }
 }
