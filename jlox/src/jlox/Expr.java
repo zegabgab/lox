@@ -84,11 +84,56 @@ abstract class Expr {
         }
     }
 
+    static class Get extends Expr {
+        final Expr object;
+        final Token name;
+
+        public Get(Expr object, Token name) {
+            this.object = object;
+            this.name = name;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    static class Set extends Expr {
+        final Expr object;
+        final Token name;
+        final Expr value;
+
+        public Set(Expr object, Token name, Expr value) {
+            this.object = object;
+            this.name = name;
+            this.value = value;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Grouping extends Expr {
         final Expr expression;
 
         public Grouping(Expr expression) {
             this.expression = expression;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
+    static class This extends Expr {
+        final Token keyword;
+
+        public This(Token keyword) {
+            this.keyword = keyword;
         }
 
         @Override

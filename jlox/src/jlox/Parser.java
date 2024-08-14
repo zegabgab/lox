@@ -37,6 +37,9 @@ class Parser {
             if (match(FUN)) {
                 return funDeclaration("function");
             }
+            if (match(CLASS)) {
+                return classDeclaration();
+            }
 
             return statement();
         } catch (ParseException e) {
@@ -45,7 +48,21 @@ class Parser {
         }
     }
 
-    private Stmt funDeclaration(String kind) throws ParseException {
+    private Stmt classDeclaration() throws ParseException {
+        var name = consume(IDENTIFIER, "Expected class name");
+        consume(LEFT_BRACE, "Expected '{' after class name");
+
+        ArrayList<Stmt.Function> methods = new ArrayList<>();
+        while (!check(RIGHT_BRACE) && !isAtEnd()) {
+            methods.add(funDeclaration("method"));
+        }
+
+        consume(RIGHT_BRACE, "Expected '}' after class body");
+
+        return new Stmt.Class(name, methods);
+    }
+
+    private Stmt.Function funDeclaration(String kind) throws ParseException {
         var name = consume(IDENTIFIER, "Expected " + kind + " name");
         consume(LEFT_PAREN, "Expected '(' after function name");
         var parameters = parameterList();
@@ -111,7 +128,7 @@ class Parser {
 
     private Stmt returnStatement() throws ParseException {
         var token = previous();
-        var value = check(SEMICOLON) ? NIL_EXPRESSION : expression();
+        var value = check(SEMICOLON) ? null : expression();
         consume(SEMICOLON, "Expected semicolon after return value");
         return new Stmt.Return(token, value);
     }
@@ -215,6 +232,10 @@ class Parser {
             if (expr instanceof Expr.Variable) {
                 return new Expr.Assign(((Expr.Variable) expr).name, value);
             }
+            if (expr instanceof Expr.Get) {
+                var get = (Expr.Get) expr;
+                return new Expr.Set(get.object, get.name, value);
+            }
 
             error(equals, "Invalid assignment target");
         }
@@ -281,6 +302,7 @@ class Parser {
             Expr right = unary();
             expr = new Expr.Binary(expr, operator, right);
         }
+
         return expr;
     }
 
@@ -288,15 +310,23 @@ class Parser {
         if (match(BANG, MINUS)) {
             return new Expr.Unary(previous(), unary());
         }
+
         return call();
     }
 
     private Expr call() throws ParseException {
         var expr = primary();
-        while (match(LEFT_PAREN)) {
-            var parens = previous();
-            var arguments = argumentList();
-            expr = new Expr.Call(expr, parens, arguments);
+        while (true) {
+            if (match(LEFT_PAREN)) {
+                var parens = previous();
+                var arguments = argumentList();
+                expr = new Expr.Call(expr, parens, arguments);
+            } else if (match(DOT)) {
+                var name = consume(IDENTIFIER, "Expected identifier after '.'");
+                expr = new Expr.Get(expr, name);
+            } else {
+                break;
+            }
         }
 
         return expr;
@@ -371,6 +401,9 @@ class Parser {
         }
         if (match(IDENTIFIER)) {
             return new Expr.Variable(previous());
+        }
+        if (match(THIS)) {
+            return new Expr.This(previous());
         }
         if (match(LEFT_PAREN)) {
             var expr = expression();

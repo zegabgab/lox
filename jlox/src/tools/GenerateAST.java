@@ -14,7 +14,10 @@ public class GenerateAST {
             "Binary     : Expr left, Token operator, Expr right",
             "Unary      : Token operator, Expr operand",
             "Call       : Expr callee, Token parens, java.util.List<Expr> arguments",
+            "Get        : Expr object, Token name",
+            "Set        : Expr object, Token name, Expr value",
             "Grouping   : Expr expression",
+            "This       : Token keyword",
             "Literal    : Object value",
             "Variable   : Token name"
     );
@@ -27,7 +30,8 @@ public class GenerateAST {
             "Print      : Expr expression",
             "Return     : Token keyword, Expr value",
             "Var        : Token name, Expr initializer",
-            "Function   : Token name, java.util.List<Token> parameters, java.util.List<Stmt> body"
+            "Function   : Token name, java.util.List<Token> parameters, java.util.List<Stmt> body",
+            "Class      : Token name, java.util.List<Stmt.Function> methods"
     );
 
     public static void main(String[] args) {

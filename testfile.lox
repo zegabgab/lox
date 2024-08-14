@@ -1,14 +1,21 @@
-fun make() {
-    var a = "this one :)";
-    {
-        fun function() {
-            print a;
-        }
-        var a = "not this one";
-
-        return function;
+class Cake {
+  init(flavor) {
+    if (flavor == nil) {
+      this.flavor = "mysterious";
+      return;
     }
+    this.flavor = flavor;
+  }
+
+  taste() {
+    var adjective = "delicious";
+    print "The " + this.flavor + " cake is " + adjective + "!";
+  }
 }
 
-var a = "not this one either";
-make()();
+var unspecified = Cake(nil);
+var cake = Cake("nutcase");
+var taste = cake.taste;
+cake.flavor = "German chocolate";
+taste();
+unspecified.taste();

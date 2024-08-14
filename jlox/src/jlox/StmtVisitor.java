@@ -9,4 +9,5 @@ interface StmtVisitor<T> {
     T visit(Stmt.Return stmt);
     T visit(Stmt.Var stmt);
     T visit(Stmt.Function stmt);
+    T visit(Stmt.Class stmt);
 }

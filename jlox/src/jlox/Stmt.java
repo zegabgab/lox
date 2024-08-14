@@ -120,4 +120,19 @@ abstract class Stmt {
             return visitor.visit(this);
         }
     }
+
+    static class Class extends Stmt {
+        final Token name;
+        final java.util.List<Stmt.Function> methods;
+
+        public Class(Token name, java.util.List<Stmt.Function> methods) {
+            this.name = name;
+            this.methods = methods;
+        }
+
+        @Override
+        public <T> T accept(StmtVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
 }

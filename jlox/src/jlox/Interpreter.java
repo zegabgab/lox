@@ -84,6 +84,29 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return function.call(this, arguments);
     }
 
+    @Override
+    public Object visit(Expr.Get expr) {
+        var object = expr.object.accept(this);
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have properties");
+        }
+
+        return ((LoxInstance) object).get(expr.name);
+    }
+
+    @Override
+    public Object visit(Expr.Set expr) {
+        var object = expr.object.accept(this);
+
+        if (!(object instanceof LoxInstance)) {
+            throw new RuntimeError(expr.name, "Only instances have fields");
+        }
+
+        var value = expr.value.accept(this);
+        ((LoxInstance) object).set(expr.name.lexeme, value);
+        return value;
+    }
+
     private Boolean compare(Expr.Binary binary, BiPredicate<Double, Double> comparator) {
         var left = binary.left.accept(this);
         var right = binary.right.accept(this);
@@ -200,6 +223,14 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     @Override
+    public Object visit(Expr.This expr) {
+        assert environment != null;
+
+        var coordinates = locals.get(expr);
+        return environment.getAt(coordinates.distance, coordinates.index);
+    }
+
+    @Override
     public Object visit(Expr.Literal expr) {
         return expr.value;
     }
@@ -261,7 +292,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Void visit(Stmt.Return stmt) {
-        throw new Return(stmt.value.accept(this));
+        throw new Return(stmt.value != null ? stmt.value.accept(this) : null);
     }
 
     @Override
@@ -277,13 +308,41 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     @Override
     public Void visit(Stmt.Function stmt) {
-        var function = new LoxFunction(stmt, environment);
+        var function = new LoxFunction(stmt, environment, false);
         if (environment != null) {
             environment.define(function);
         } else {
             globals.define(stmt.name.lexeme, function);
         }
         return null;
+    }
+
+    @Override
+    public Void visit(Stmt.Class stmt) {
+        if (environment != null) {
+            defineLocalClass(stmt);
+        } else {
+            defineGlobalClass(stmt);
+        }
+        return null;
+    }
+
+    private void defineGlobalClass(Stmt.Class stmt) {
+        HashMap<String, LoxFunction> methods = new HashMap<>();
+        for (var method : stmt.methods) {
+            methods.put(method.name.lexeme, new LoxFunction(method, environment, method.name.lexeme.equals("init")));
+        }
+
+        globals.define(stmt.name.lexeme, new LoxClass(stmt.name.lexeme, methods));
+    }
+
+    private void defineLocalClass(Stmt.Class stmt) {
+        HashMap<String, LoxFunction> methods = new HashMap<>();
+        for (var method : stmt.methods) {
+            methods.put(method.name.lexeme, new LoxFunction(method, environment, false));
+        }
+
+        environment.define(new LoxClass(stmt.name.lexeme, methods));
     }
 
     public void resolve(Expr expr, int depth, int index) {

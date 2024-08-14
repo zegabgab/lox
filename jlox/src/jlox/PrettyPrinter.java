@@ -25,6 +25,20 @@ class PrettyPrinter implements ExprVisitor<String> {
     }
 
     @Override
+    public String visit(Expr.Get expr) {
+        return parenthesize("get " + expr.object.accept(this) + "." + expr.name.lexeme);
+    }
+
+    @Override
+    public String visit(Expr.Set expr) {
+        return parenthesize("set "
+                + expr.object.accept(this)
+                + "."
+                + expr.name.lexeme
+                + expr.value.accept(this));
+    }
+
+    @Override
     public String visit(Expr.Assign expr) {
         return parenthesize("assign " + expr.name.lexeme + " " + expr.value.accept(this));
     }
@@ -42,6 +56,11 @@ class PrettyPrinter implements ExprVisitor<String> {
     @Override
     public String visit(Expr.Grouping expr) {
         return parenthesize("group " + expr.expression.accept(this));
+    }
+
+    @Override
+    public String visit(Expr.This expr) {
+        return "this";
     }
 
     @Override
