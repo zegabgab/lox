@@ -107,6 +107,19 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
         return value;
     }
 
+    @Override
+    public Object visit(Expr.Super expr) {
+        var coordinates = locals.get(expr);
+        var superclass = (LoxClass) environment.getAt(coordinates.distance, coordinates.index);
+        var instance = (LoxInstance) environment.getAt(coordinates.distance - 1, 0);
+        var method = superclass.findMethod(expr.method.lexeme);
+
+        if (method == null) {
+            throw new RuntimeError(expr.method, "Undefined property '" + expr.method.lexeme + "'");
+        }
+        return method.bind(instance);
+    }
+
     private Boolean compare(Expr.Binary binary, BiPredicate<Double, Double> comparator) {
         var left = binary.left.accept(this);
         var right = binary.right.accept(this);
@@ -328,21 +341,57 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     }
 
     private void defineGlobalClass(Stmt.Class stmt) {
+        globals.define(stmt.name.lexeme, null);
+
+        var superclass = stmt.superclass != null
+                ? stmt.superclass.accept(this)
+                : null;
+        if (superclass != null && !(superclass instanceof LoxClass)) {
+            throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+        }
+
+        if (superclass != null) {
+            environment = new Environment(environment);
+            environment.define(superclass);
+        }
+
         HashMap<String, LoxFunction> methods = new HashMap<>();
         for (var method : stmt.methods) {
             methods.put(method.name.lexeme, new LoxFunction(method, environment, method.name.lexeme.equals("init")));
         }
 
-        globals.define(stmt.name.lexeme, new LoxClass(stmt.name.lexeme, methods));
+        if (superclass != null) {
+            environment = environment.enclosing();
+        }
+
+        globals.assign(stmt.name, new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods));
     }
 
     private void defineLocalClass(Stmt.Class stmt) {
+        environment.define(null);
+
+        var superclass = stmt.superclass != null
+                ? stmt.superclass.accept(this)
+                : null;
+        if (superclass != null && !(superclass instanceof LoxClass)) {
+            throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
+        }
+
+        if (superclass != null) {
+            environment = new Environment(environment);
+            environment.define(superclass);
+        }
+
         HashMap<String, LoxFunction> methods = new HashMap<>();
         for (var method : stmt.methods) {
             methods.put(method.name.lexeme, new LoxFunction(method, environment, false));
         }
 
-        environment.define(new LoxClass(stmt.name.lexeme, methods));
+        if (superclass != null) {
+            environment = environment.enclosing();
+        }
+
+        environment.assignLast(new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods));
     }
 
     public void resolve(Expr expr, int depth, int index) {

@@ -14,6 +14,10 @@ class Environment {
         values.add(value);
     }
 
+    public Environment enclosing() {
+        return outer;
+    }
+
     private Environment ancestor(int distance) {
         Environment ancestor = this;
         for (int i = 0; i < distance; i++) {
@@ -30,5 +34,9 @@ class Environment {
     public Object assignAt(int distance, int index, Object value) {
         ancestor(distance).values.set(index, value);
         return value;
+    }
+
+    public void assignLast(Object value) {
+        values.set(values.size() - 1, value);
     }
 }

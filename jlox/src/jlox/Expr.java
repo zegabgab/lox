@@ -116,6 +116,21 @@ abstract class Expr {
         }
     }
 
+    static class Super extends Expr {
+        final Token keyword;
+        final Token method;
+
+        public Super(Token keyword, Token method) {
+            this.keyword = keyword;
+            this.method = method;
+        }
+
+        @Override
+        public <T> T accept(ExprVisitor<T> visitor) {
+            return visitor.visit(this);
+        }
+    }
+
     static class Grouping extends Expr {
         final Expr expression;
 

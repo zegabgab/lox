@@ -16,6 +16,7 @@ public class GenerateAST {
             "Call       : Expr callee, Token parens, java.util.List<Expr> arguments",
             "Get        : Expr object, Token name",
             "Set        : Expr object, Token name, Expr value",
+            "Super      : Token keyword, Token method",
             "Grouping   : Expr expression",
             "This       : Token keyword",
             "Literal    : Object value",
@@ -31,7 +32,7 @@ public class GenerateAST {
             "Return     : Token keyword, Expr value",
             "Var        : Token name, Expr initializer",
             "Function   : Token name, java.util.List<Token> parameters, java.util.List<Stmt> body",
-            "Class      : Token name, java.util.List<Stmt.Function> methods"
+            "Class      : Token name, Expr.Variable superclass, java.util.List<Stmt.Function> methods"
     );
 
     public static void main(String[] args) {

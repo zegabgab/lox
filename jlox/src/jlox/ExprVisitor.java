@@ -8,6 +8,7 @@ interface ExprVisitor<T> {
     T visit(Expr.Call expr);
     T visit(Expr.Get expr);
     T visit(Expr.Set expr);
+    T visit(Expr.Super expr);
     T visit(Expr.Grouping expr);
     T visit(Expr.This expr);
     T visit(Expr.Literal expr);

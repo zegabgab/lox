@@ -39,6 +39,11 @@ class PrettyPrinter implements ExprVisitor<String> {
     }
 
     @Override
+    public String visit(Expr.Super expr) {
+        return parenthesize("super." + expr.method.lexeme);
+    }
+
+    @Override
     public String visit(Expr.Assign expr) {
         return parenthesize("assign " + expr.name.lexeme + " " + expr.value.accept(this));
     }

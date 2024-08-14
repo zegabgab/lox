@@ -50,6 +50,9 @@ class Parser {
 
     private Stmt classDeclaration() throws ParseException {
         var name = consume(IDENTIFIER, "Expected class name");
+        var superclass = match(LESS)
+                ? new Expr.Variable(consume(IDENTIFIER, "Expected superclass name"))
+                : null;
         consume(LEFT_BRACE, "Expected '{' after class name");
 
         ArrayList<Stmt.Function> methods = new ArrayList<>();
@@ -59,7 +62,7 @@ class Parser {
 
         consume(RIGHT_BRACE, "Expected '}' after class body");
 
-        return new Stmt.Class(name, methods);
+        return new Stmt.Class(name, superclass, methods);
     }
 
     private Stmt.Function funDeclaration(String kind) throws ParseException {
@@ -401,6 +404,11 @@ class Parser {
         }
         if (match(IDENTIFIER)) {
             return new Expr.Variable(previous());
+        }
+        if (match(SUPER)) {
+            var keyword = previous();
+            consume(DOT, "Expected '.' after 'super'");
+            return new Expr.Super(keyword, consume(IDENTIFIER, "Expected method name"));
         }
         if (match(THIS)) {
             return new Expr.This(previous());

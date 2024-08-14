@@ -1,21 +1,13 @@
-class Cake {
-  init(flavor) {
-    if (flavor == nil) {
-      this.flavor = "mysterious";
-      return;
-    }
-    this.flavor = flavor;
-  }
-
-  taste() {
-    var adjective = "delicious";
-    print "The " + this.flavor + " cake is " + adjective + "!";
+class Pen {
+  write(thing) {
+    return "Writing " + thing;
   }
 }
 
-var unspecified = Cake(nil);
-var cake = Cake("nutcase");
-var taste = cake.taste;
-cake.flavor = "German chocolate";
-taste();
-unspecified.taste();
+class Feather < Pen {
+  write(thing) {
+    return super.write(thing) + " fancily";
+  }
+}
+
+print Feather().write("a novel");
