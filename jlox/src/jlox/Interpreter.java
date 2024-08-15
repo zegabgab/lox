@@ -343,33 +343,15 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
     private void defineGlobalClass(Stmt.Class stmt) {
         globals.define(stmt.name.lexeme, null);
 
-        var superclass = stmt.superclass != null
-                ? stmt.superclass.accept(this)
-                : null;
-        if (superclass != null && !(superclass instanceof LoxClass)) {
-            throw new RuntimeError(stmt.superclass.name, "Superclass must be a class");
-        }
-
-        if (superclass != null) {
-            environment = new Environment(environment);
-            environment.define(superclass);
-        }
-
-        HashMap<String, LoxFunction> methods = new HashMap<>();
-        for (var method : stmt.methods) {
-            methods.put(method.name.lexeme, new LoxFunction(method, environment, method.name.lexeme.equals("init")));
-        }
-
-        if (superclass != null) {
-            environment = environment.enclosing();
-        }
-
-        globals.assign(stmt.name, new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods));
+        globals.assign(stmt.name, defineClass(stmt));
     }
 
     private void defineLocalClass(Stmt.Class stmt) {
         environment.define(null);
+        environment.assignLast(defineClass(stmt));
+    }
 
+    private LoxClass defineClass(Stmt.Class stmt) {
         var superclass = stmt.superclass != null
                 ? stmt.superclass.accept(this)
                 : null;
@@ -391,7 +373,7 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
             environment = environment.enclosing();
         }
 
-        environment.assignLast(new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods));
+        return new LoxClass(stmt.name.lexeme, (LoxClass) superclass, methods);
     }
 
     public void resolve(Expr expr, int depth, int index) {
