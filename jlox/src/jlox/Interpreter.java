@@ -342,7 +342,6 @@ class Interpreter implements ExprVisitor<Object>, StmtVisitor<Void> {
 
     private void defineGlobalClass(Stmt.Class stmt) {
         globals.define(stmt.name.lexeme, null);
-
         globals.assign(stmt.name, defineClass(stmt));
     }
 
