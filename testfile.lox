@@ -1,13 +1,19 @@
-class Pen {
-  write(thing) {
-    return "Writing " + thing;
+fun feather() {
+  class Pen {
+    write(thing) {
+      return "Writing " + thing;
+    }
   }
+
+  class Feather < Pen {
+    write(thing) {
+      return super.write(thing) + " fancily";
+    }
+  }
+
+  return Feather();
 }
 
-class Feather < Pen {
-  write(thing) {
-    return super.write(thing) + " fancily";
-  }
-}
 
-print Feather().write("a novel");
+
+print feather().write("a novel");
