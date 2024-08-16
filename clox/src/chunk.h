@@ -15,7 +15,12 @@ typedef enum {
 } OpCode;
 
 typedef struct {
-    int *lines;
+    int line;
+    int run;
+} LineRunLength;
+
+typedef struct {
+    LineRunLength *lines;
     int count;
     int capacity;
 } LineArray;

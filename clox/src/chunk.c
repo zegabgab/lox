@@ -35,9 +35,9 @@ int addConstant(Chunk *chunk, Value value) {
 
 int getLine(Chunk *chunk, int index) {
     for (int i = 0; i < chunk->lines.count; i++) {
-        index -= chunk->lines.lines[i];
+        index -= chunk->lines.lines[i].run;
         if (index < 0) {
-            return i + 1;
+            return chunk->lines.lines[i].line;
         }
     }
 
@@ -55,22 +55,23 @@ void freeLineArray(LineArray *array) {
     initLineArray(array);
 }
 
-void writeLineArray(LineArray *array, int line) {
-    line--;
-    if (line >= array->capacity) {
+static void addLine(LineArray *array, int line) {
+    if (array->count >= array->capacity) {
         int oldCapacity = array->capacity;
-        do {
-            array->capacity = GROW_CAPACITY(array->capacity);
-        } while (line >= array->capacity);
-
-        array->lines = GROW_ARRAY(array->lines, oldCapacity, array->capacity);
+        array->capacity = GROW_CAPACITY(oldCapacity);
+        array->lines = 
+            GROW_ARRAY(array->lines, oldCapacity, array->capacity);
     }
-
-    for (int i = array->count; i <= line; i++) {
-        array->lines[i] = 0;
-    }
-
-    array->count = line >= array->count ? line + 1 : array->count;
-    array->lines[line]++;
+    array->lines[array->count] = 
+        (LineRunLength) { .line = line, .run = 1 };
+    array->count++;
 }
 
+void writeLineArray(LineArray *array, int line) {
+    if (array->count == 0
+            || array->lines[array->count - 1].line != line) {
+        addLine(array, line);
+    } else {
+        array->lines[array->count - 1].run++;
+    }
+}

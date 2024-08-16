@@ -20,10 +20,10 @@ int main(int argc, char **argv) {
     writeChunk(&chunk, OP_ADD, 420);
 
     constant = addConstant(&chunk, 5.6);
-    writeChunk(&chunk, OP_CONSTANT, 420);
-    writeChunk(&chunk, constant, 420);
+    writeChunk(&chunk, OP_CONSTANT, 421);
+    writeChunk(&chunk, constant, 421);
 
-    writeChunk(&chunk, OP_DIVIDE, 420);
+    writeChunk(&chunk, OP_DIVIDE, 421);
 
     writeChunk(&chunk, OP_NEGATE, 420);
 
