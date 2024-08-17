@@ -134,8 +134,8 @@ static Token number() {
 }
 
 static TokenType findKeyword(const char *start, const char *tail, TokenType type) {
-    for (; start < scanner.current && *tail != '\0'; start++, tail++) {
-        if (*start != *tail) {
+    for (; *tail != '\0'; start++, tail++) {
+        if (start == scanner.current || *start != *tail) {
             return TOKEN_IDENTIFIER;
         }
     }
@@ -149,21 +149,21 @@ static TokenType identifierType() {
         case 'a': return findKeyword(start, "nd", TOKEN_AND);
         case 'c': return findKeyword(start, "lass", TOKEN_CLASS);
         case 'e': return findKeyword(start, "lse", TOKEN_ELSE);
-        case 'f': if (start < scanner.current) switch (*start++) {
+        case 'f': switch (*start++) {
                       case 'a': return findKeyword(start, "lse", TOKEN_FALSE);
                       case 'o': return findKeyword(start, "r", TOKEN_FOR);
                       case 'u': return findKeyword(start, "n", TOKEN_FUN);
-                  } else break;
+                  }
         case 'i': return findKeyword(start, "f", TOKEN_IF);
         case 'n': return findKeyword(start, "il", TOKEN_NIL);
         case 'o': return findKeyword(start, "r", TOKEN_OR);
         case 'p': return findKeyword(start, "rint", TOKEN_PRINT);
         case 'r': return findKeyword(start, "eturn", TOKEN_RETURN);
         case 's': return findKeyword(start, "uper", TOKEN_SUPER);
-        case 't': if (start < scanner.current) switch (*start++) {
+        case 't': switch (*start++) {
                       case 'h': return findKeyword(start, "is", TOKEN_THIS);
                       case 'r': return findKeyword(start, "ue", TOKEN_TRUE);
-                  } else break;
+                  }
         case 'v': return findKeyword(start, "ar", TOKEN_VAR);
         case 'w': return findKeyword(start, "hile", TOKEN_WHILE);
     }
