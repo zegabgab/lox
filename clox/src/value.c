@@ -25,5 +25,29 @@ void writeValueArray(ValueArray *array, Value value) {
 }
 
 void printValue(Value value) {
-    printf("%g", value);
+    switch (value.type) {
+        case VAL_NUMBER:
+            printf("%g", AS_NUMBER(value));
+            break;
+        case VAL_BOOL:
+            printf(AS_BOOL(value) ? "true" : "false");
+            break;
+        case VAL_NIL:
+            printf("nil");
+            break;
+    }
+}
+
+bool valuesEqual(Value one, Value two) {
+    if (one.type != two.type) {
+        return false;
+    }
+    switch (one.type) {
+        case VAL_NIL:
+            return true;
+        case VAL_BOOL:
+            return AS_BOOL(one) == AS_BOOL(two);
+        case VAL_NUMBER:
+            return AS_NUMBER(one) == AS_NUMBER(two);
+    }
 }
