@@ -54,11 +54,7 @@ bool valuesEqual(Value one, Value two) {
             return AS_BOOL(one) == AS_BOOL(two);
         case VAL_NUMBER:
             return AS_NUMBER(one) == AS_NUMBER(two);
-        case VAL_OBJ: {
-            ObjString *left = AS_STRING(one);
-            ObjString *right = AS_STRING(two);
-            return left->length == right->length &&
-                memcmp(left->chars, right->chars, left->length) == 0;
-        }
+        case VAL_OBJ:
+            return AS_OBJ(one) == AS_OBJ(two);
     }
 }

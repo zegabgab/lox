@@ -19,9 +19,11 @@ static void resetStack(void) {
 void initVM(void) {
     resetStack();
     vm.objects = NULL;
+    initTable(&vm.strings);
 }
 
 void freeVM(void) {
+    freeTable(&vm.strings);
     freeObjects();
 }
 
