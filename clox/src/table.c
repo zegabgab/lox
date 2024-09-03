@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -52,12 +53,15 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
         Entry *entry = entries + index;
         if (entry->key == NULL) {
             if (IS_NIL(entry->value)) {
+                fprintf(stderr, "Hash lookup at %d - new key\n", index);
                 return tombstone != NULL ? tombstone : entry;
             }
             if (tombstone == NULL) {
+                fprintf(stderr, "Tombstone found\n");
                 tombstone = entry;
             }
         } else if (entry->key == key) {
+            fprintf(stderr, "Hash lookup at %d\n", index);
             return entry;
         }
 
@@ -82,12 +86,12 @@ bool tableGet(Table *table, ObjString *key, Value *value) {
 }
 
 bool tableSet(Table *table, ObjString *key, Value value) {
-    if (table->count >= table->capacity * TABLE_MAX_LOAD) {
+    if (table->count + 1 > table->capacity * TABLE_MAX_LOAD) {
         adjustCapacity(table, GROW_CAPACITY(table->capacity));
     }
 
     Entry *entry = findEntry(table->entries, table->capacity, key);
-    bool isNewKey = entry->key != NULL;
+    bool isNewKey = entry->key == NULL;
     if (isNewKey && IS_NIL(entry->value)) {
         table->count++;
     }
@@ -117,7 +121,7 @@ ObjString *tableFindString(Table *table, const char *chars, int length, uint32_t
         return NULL;
     }
 
-    uint32_t index = hash & table->capacity;
+    uint32_t index = hash % table->capacity;
     for (;;) {
         Entry *entry = table->entries + index;
         if (entry->key == NULL) {
