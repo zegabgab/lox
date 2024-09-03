@@ -53,15 +53,12 @@ static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
         Entry *entry = entries + index;
         if (entry->key == NULL) {
             if (IS_NIL(entry->value)) {
-                fprintf(stderr, "Hash lookup at %d - new key\n", index);
                 return tombstone != NULL ? tombstone : entry;
             }
             if (tombstone == NULL) {
-                fprintf(stderr, "Tombstone found\n");
                 tombstone = entry;
             }
         } else if (entry->key == key) {
-            fprintf(stderr, "Hash lookup at %d\n", index);
             return entry;
         }
 
