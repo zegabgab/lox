@@ -111,12 +111,6 @@ static InterpretResult run(void) {
                 pop();
                 break;
             }
-            case OP_DIVIDE:
-                BINARY_OP(NUMBER_VAL, /);
-                break;
-            case OP_FALSE:
-                push(BOOL_VAL(false));
-                break;
             case OP_GET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 Value value;
@@ -128,6 +122,22 @@ static InterpretResult run(void) {
                 push(value);
                 break;
             }
+            case OP_SET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                Value old;
+                if (!tableGet(&vm.globals, name, &old)) {
+                    runtimeError("Undefined variable '%s'\n", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                tableSet(&vm.globals, name, peek(0));
+                break;
+            }
+            case OP_DIVIDE:
+                BINARY_OP(NUMBER_VAL, /);
+                break;
+            case OP_FALSE:
+                push(BOOL_VAL(false));
+                break;
             case OP_MULTIPLY:
                 BINARY_OP(NUMBER_VAL, *);
                 break;
