@@ -18,6 +18,11 @@ void *reallocate(void *array, size_t oldSize, size_t newSize) {
     return result;
 }
 
+static void freeFunction(ObjFunction *function) {
+    freeChunk(&function->chunk);
+    FREE(function);
+}
+
 static void freeString(ObjString *string) {
     FREE_ARRAY(string->chars, string->length + 1);
     FREE(string);
@@ -25,6 +30,9 @@ static void freeString(ObjString *string) {
 
 static void freeObject(Obj *object) {
     switch (object->type) {
+        case OBJ_FUNCTION:
+            freeFunction((ObjFunction*) object);
+            break;
         case OBJ_STRING:
             freeString((ObjString*) object);
             break;
