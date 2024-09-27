@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
@@ -124,6 +125,7 @@ static InterpretResult run(void) {
             }
             case OP_GET_GLOBAL: {
                 ObjString *name = READ_STRING();
+                assert(name != NULL && name->chars != NULL);
                 Value value;
                 if (!tableGet(&vm.globals, name, &value)) {
                     runtimeError("Undefined variable '%s'", name->chars);
@@ -244,7 +246,10 @@ InterpretResult interpret(const char *source) {
     frame->function = function;
     frame->ip = function->chunk.code;
     frame->slots = vm.stack;
-    return run();
+
+    InterpretResult result = run();
+    pop();
+    return result;
 }
 
 void push(Value value) {

@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +47,8 @@ static void adjustCapacity(Table *table, int capacity) {
 }
 
 static Entry *findEntry(Entry *entries, int capacity, ObjString *key) {
+    assert(entries != NULL);
+    assert(key != NULL);
     unsigned int index = key->hash % capacity;
     Entry *tombstone = NULL;
 
