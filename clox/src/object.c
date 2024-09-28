@@ -45,6 +45,12 @@ ObjFunction *newFunction() {
     return function;
 }
 
+ObjNative *newNative(NativeFn function) {
+    ObjNative *native = ALLOCATE_OBJ(ObjNative, OBJ_NATIVE);
+    native->function = function;
+    return native;
+}
+
 ObjString *takeString(char *chars, int length) {
     uint32_t hash = hashString(chars, length);
     ObjString *interned = tableFindString(&vm.strings, chars, length, hash);

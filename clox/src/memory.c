@@ -23,6 +23,10 @@ static void freeFunction(ObjFunction *function) {
     FREE(function);
 }
 
+static void freeNative(ObjNative *native) {
+    FREE(native);
+}
+
 static void freeString(ObjString *string) {
     FREE_ARRAY(string->chars, string->length + 1);
     FREE(string);
@@ -32,6 +36,9 @@ static void freeObject(Obj *object) {
     switch (object->type) {
         case OBJ_FUNCTION:
             freeFunction((ObjFunction*) object);
+            break;
+        case OBJ_NATIVE:
+            freeNative((ObjNative*) object);
             break;
         case OBJ_STRING:
             freeString((ObjString*) object);

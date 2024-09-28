@@ -105,7 +105,7 @@ static void emitBytes(uint8_t one, uint8_t two) {
 }
 
 static void emitReturn() {
-    emitByte(OP_RETURN);
+    emitBytes(OP_NIL, OP_RETURN);
 }
 
 static int emitJump(uint8_t instruction) {
@@ -295,6 +295,13 @@ static void binary(bool canAssign) {
     }
 }
 
+static uint8_t argumentList();
+
+static void call(bool canAssign) {
+    uint8_t argCount = argumentList();
+    emitBytes(OP_CALL, argCount);
+}
+
 static void unary(bool canAssign) {
     TokenType operator = parser.previous.type;
     parsePrecedence(PREC_UNARY);
@@ -388,7 +395,7 @@ static void variable(bool canAssign) {
 }
 
 ParseRule rules[] = {
-  [TOKEN_LEFT_PAREN]    = {grouping, NULL,   PREC_NONE},
+  [TOKEN_LEFT_PAREN]    = {grouping, call,   PREC_CALL},
   [TOKEN_RIGHT_PAREN]   = {NULL,     NULL,   PREC_NONE},
   [TOKEN_LEFT_BRACE]    = {NULL,     NULL,   PREC_NONE}, 
   [TOKEN_RIGHT_BRACE]   = {NULL,     NULL,   PREC_NONE},
@@ -532,6 +539,21 @@ static void ifStatement() {
     patchJump(elseJump);
 }
 
+static void returnStatement() {
+    if (current->type == TYPE_SCRIPT) {
+        error("Can't return from top-level code");
+    }
+
+    if (match(TOKEN_SEMICOLON)) {
+        emitReturn();
+        return;
+    }
+
+    expression();
+    consume(TOKEN_SEMICOLON, "Expected ';' after return value");
+    emitByte(OP_RETURN);
+}
+
 static void whileStatement() {
     int loopStart = currentChunk()->count;
     consume(TOKEN_LEFT_PAREN, "Expected '(' after 'while'");
@@ -608,6 +630,8 @@ static void statement() {
         endScope();
     } else if (match(TOKEN_IF)) {
         ifStatement();
+    } else if (match(TOKEN_RETURN)) {
+        returnStatement();
     } else if (match(TOKEN_WHILE)) {
         whileStatement();
     } else if (match(TOKEN_FOR)) {
@@ -671,6 +695,21 @@ static void defineVariable(uint8_t global) {
     }
 
     emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
+static uint8_t argumentList() {
+    uint8_t argCount = 0;
+    if (!check(TOKEN_RIGHT_PAREN)) {
+        do {
+            expression();
+            if (argCount == 255) {
+                error("Can't have more than 255 arguments");
+            }
+            argCount++;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after arguments");
+    return argCount;
 }
 
 static void function(FunctionType type) {
