@@ -157,6 +157,10 @@ static bool runReturn(CallFrame *frame) {
     return false;
 }
 
+static ObjUpvalue *captureUpvalue(Value *local) {
+    ObjUpvalue *upvalue = newUpvalue(local);
+    return upvalue;
+}
 
 static InterpretResult run(void) {
     CallFrame *frame = vm.frames + vm.frameCount - 1;
@@ -212,6 +216,15 @@ static InterpretResult run(void) {
                 ObjFunction *function = AS_FUNCTION(READ_CONSTANT());
                 ObjClosure *closure = newClosure(function);
                 push(OBJ_VAL(closure));
+                for (int i = 0; i < closure->upvalueCount; i++) {
+                    uint8_t isLocal = READ_BYTE();
+                    uint8_t index = READ_BYTE();
+                    if (isLocal) {
+                        closure->upvalues[i] = captureUpvalue(frame->slots + index);
+                    } else {
+                        closure->upvalues[i] = frame->closure->upvalues[index];
+                    }
+                }
                 break;
             }
             case OP_CONSTANT: {
@@ -242,6 +255,11 @@ static InterpretResult run(void) {
                 push(frame->slots[slot]);
                 break;
             }
+            case OP_GET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                push(*frame->closure->upvalues[slot]->location);
+                break;
+            }
             case OP_SET_GLOBAL: {
                 ObjString *name = READ_STRING();
                 Value old;
@@ -255,6 +273,11 @@ static InterpretResult run(void) {
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = peek(0);
+                break;
+            }
+            case OP_SET_UPVALUE: {
+                uint8_t slot = READ_BYTE();
+                *frame->closure->upvalues[slot]->location = peek(0);
                 break;
             }
             case OP_DIVIDE:

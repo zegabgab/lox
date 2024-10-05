@@ -24,6 +24,7 @@ typedef enum {
     OBJ_FUNCTION,
     OBJ_NATIVE,
     OBJ_STRING,
+    OBJ_UPVALUE,
 } ObjType;
 
 struct Obj {
@@ -55,12 +56,20 @@ struct ObjString {
 
 typedef struct {
     Obj obj;
+    Value *location;
+} ObjUpvalue;
+
+typedef struct {
+    Obj obj;
     ObjFunction *function;
+    ObjUpvalue **upvalues;
+    int upvalueCount;
 } ObjClosure;
 
 ObjClosure *newClosure(ObjFunction *function);
 ObjFunction *newFunction(void);
 ObjNative *newNative(NativeFn function);
+ObjUpvalue *newUpvalue(Value *slot);
 ObjString *takeString(char *chars, int length);
 ObjString *copyString(const char *chars, int length);
 void printObject(Value value);
