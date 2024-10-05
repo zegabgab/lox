@@ -27,6 +27,7 @@ static void defineNative(const char *name, NativeFn function);
 
 void initVM(void) {
     resetStack();
+    vm.openUpvalues = NULL;
     vm.objects = NULL;
     initTable(&vm.globals);
     initTable(&vm.strings);
@@ -144,8 +145,18 @@ static bool runCall(int argCount) {
     return callValue(peek(argCount), argCount);
 }
 
+static void closeUpvalues(Value *last) {
+    while (vm.openUpvalues != NULL && vm.openUpvalues->location >= last) {
+        ObjUpvalue *upvalue = vm.openUpvalues;
+        upvalue->closed = *upvalue->location;
+        upvalue->location = &upvalue->closed;
+        vm.openUpvalues = upvalue->next;
+    }
+}
+
 static bool runReturn(CallFrame *frame) {
     Value result = pop();
+    closeUpvalues(frame->slots);
     vm.frameCount--;
     if (vm.frameCount == 0) {
         pop();
@@ -158,8 +169,26 @@ static bool runReturn(CallFrame *frame) {
 }
 
 static ObjUpvalue *captureUpvalue(Value *local) {
-    ObjUpvalue *upvalue = newUpvalue(local);
-    return upvalue;
+    ObjUpvalue *prevUpvalue = NULL;
+    ObjUpvalue *upvalue = vm.openUpvalues;
+    while (upvalue != NULL && upvalue->location > local) {
+        prevUpvalue = upvalue;
+        upvalue = upvalue->next;
+    }
+
+    if (upvalue != NULL && upvalue->location == local) {
+        return upvalue;
+    }
+
+    ObjUpvalue *createdUpvalue = newUpvalue(local);
+
+    if (prevUpvalue == NULL) {
+        vm.openUpvalues = createdUpvalue;
+    } else {
+        prevUpvalue->next = createdUpvalue;
+    }
+
+    return createdUpvalue;
 }
 
 static InterpretResult run(void) {
@@ -211,6 +240,10 @@ static InterpretResult run(void) {
             case OP_CALL:
                 if (!runCall(READ_BYTE())) return INTERPRET_RUNTIME_ERROR;
                 frame = vm.frames + vm.frameCount - 1;
+                break;
+            case OP_CLOSE_UPVALUE:
+                closeUpvalues(vm.stackTop - 1);
+                pop();
                 break;
             case OP_CLOSURE: {
                 ObjFunction *function = AS_FUNCTION(READ_CONSTANT());

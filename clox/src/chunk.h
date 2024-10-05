@@ -9,6 +9,7 @@ typedef enum {
     OP_CALL,
     OP_CONSTANT,
     OP_CLOSURE,
+    OP_CLOSE_UPVALUE,
     OP_DIVIDE,
     OP_FALSE,
     OP_JUMP,
