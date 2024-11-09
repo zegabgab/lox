@@ -29,6 +29,13 @@ void initVM(void) {
     resetStack();
     vm.openUpvalues = NULL;
     vm.objects = NULL;
+    vm.bytesAllocated = 0;
+    vm.nextGC = 2 << 20;
+
+    vm.grayCount = 0;
+    vm.grayCapacity = 0;
+    vm.grayStack = NULL;
+
     initTable(&vm.globals);
     initTable(&vm.strings);
 
@@ -77,8 +84,8 @@ static Value peek(int distance) {
 }
 
 static void concatenate() {
-    ObjString *two = AS_STRING(pop());
-    ObjString *one = AS_STRING(pop());
+    ObjString *two = AS_STRING(peek(0));
+    ObjString *one = AS_STRING(peek(1));
 
     int length = one->length + two->length;
     char *chars = ALLOCATE(char, length + 1);
@@ -86,6 +93,8 @@ static void concatenate() {
     memcpy(chars + one->length, two->chars, sizeof(char) * (two->length + 1));
 
     ObjString *result = takeString(chars, length);
+    pop();
+    pop();
     push(OBJ_VAL(result));
 }
 
