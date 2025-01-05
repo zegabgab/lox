@@ -57,4 +57,6 @@ bool valuesEqual(Value one, Value two) {
         case VAL_OBJ:
             return AS_OBJ(one) == AS_OBJ(two);
     }
+
+    return false;
 }

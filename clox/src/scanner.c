@@ -1,7 +1,7 @@
+#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "common.h"
 #include "scanner.h"
 
 #define ERROR_TOKEN(message) (errorToken((message), sizeof (message)))
@@ -112,8 +112,8 @@ static bool isDigit(char c) {
 }
 
 static bool isAlpha(char c) {
-    return 'a' <= c && c <= 'z'
-        || 'A' <= c && c <= 'Z'
+    return ('a' <= c && c <= 'z')
+        || ('A' <= c && c <= 'Z')
         || c == '_';
 }
 

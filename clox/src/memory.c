@@ -7,7 +7,6 @@
 
 #ifdef DEBUG_LOG_GC
 #include <stdio.h>
-#include "debug.h"
 #endif /* debug logging */
 
 #define GC_HEAP_GROW_FACTOR 2
@@ -81,12 +80,22 @@ static void blackenObject(Obj *object) {
 #endif
 
     switch (object->type) {
+        case OBJ_CLASS: {
+            markObject((Obj*) ((ObjClass*) object)->name);
+            break;
+        }
         case OBJ_CLOSURE: {
             ObjClosure *closure = (ObjClosure*) object;
             markObject((Obj*) closure->function);
             for (int i = 0; i < closure->upvalueCount; i++) {
                 markObject((Obj*) closure->upvalues[i]);
             }
+            break;
+        }
+        case OBJ_INSTANCE: {
+            ObjInstance *instance = (ObjInstance*) object;
+            markObject((Obj*) instance->klass);
+            markTable(&instance->fields);
             break;
         }
         case OBJ_FUNCTION: {
@@ -104,6 +113,10 @@ static void blackenObject(Obj *object) {
     }
 }
 
+static void freeClass(ObjClass *klass) {
+    FREE(klass);
+}
+
 static void freeClosure(ObjClosure *closure) {
     FREE_ARRAY(closure->upvalues, closure->upvalueCount);
     FREE(closure);
@@ -112,6 +125,11 @@ static void freeClosure(ObjClosure *closure) {
 static void freeFunction(ObjFunction *function) {
     freeChunk(&function->chunk);
     FREE(function);
+}
+
+static void freeInstance(ObjInstance *instance) {
+    freeTable(&instance->fields);
+    FREE(instance);
 }
 
 static void freeNative(ObjNative *native) {
@@ -133,11 +151,17 @@ static void freeObject(Obj *object) {
 #endif
 
     switch (object->type) {
+        case OBJ_CLASS:
+            freeClass((ObjClass*) object);
+            break;
         case OBJ_CLOSURE:
             freeClosure((ObjClosure*) object);
             break;
         case OBJ_FUNCTION:
             freeFunction((ObjFunction*) object);
+            break;
+        case OBJ_INSTANCE:
+            freeInstance((ObjInstance*) object);
             break;
         case OBJ_NATIVE:
             freeNative((ObjNative*) object);

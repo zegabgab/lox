@@ -123,6 +123,11 @@ static bool call(ObjClosure *closure, int argCount) {
     return true;
 }
 
+static bool callClass(ObjClass *klass, int argCount) {
+    vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+    return true;
+}
+
 static bool callNative(NativeFn function, int argCount) {
     Value result = function(argCount, vm.stackTop - argCount);
     vm.stackTop -= argCount + 1;
@@ -141,6 +146,8 @@ static bool callValue(Value callee, int argCount) {
     }
     
     switch (OBJ_TYPE(callee)) {
+        case OBJ_CLASS:
+            return callClass(AS_CLASS(callee), argCount);
         case OBJ_CLOSURE:
             return call(AS_CLOSURE(callee), argCount);
         case OBJ_NATIVE:
@@ -250,6 +257,9 @@ static InterpretResult run(void) {
                 if (!runCall(READ_BYTE())) return INTERPRET_RUNTIME_ERROR;
                 frame = vm.frames + vm.frameCount - 1;
                 break;
+            case OP_CLASS:
+                push(OBJ_VAL(newClass(READ_STRING())));
+                break;
             case OP_CLOSE_UPVALUE:
                 closeUpvalues(vm.stackTop - 1);
                 pop();
@@ -297,6 +307,25 @@ static InterpretResult run(void) {
                 push(frame->slots[slot]);
                 break;
             }
+            case OP_GET_PROPERTY: {
+                if (!IS_INSTANCE(peek(0))) {
+                    runtimeError("Only instances have properties");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+
+                ObjInstance *instance = AS_INSTANCE(peek(0));
+                ObjString *name = READ_STRING();
+
+                Value value;
+                if (tableGet(&instance->fields, name, &value)) {
+                    pop();
+                    push(value);
+                    break;
+                }
+
+                runtimeError("Undefined property '%s'", name->chars);
+                return INTERPRET_RUNTIME_ERROR;
+            }
             case OP_GET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
                 push(*frame->closure->upvalues[slot]->location);
@@ -315,6 +344,19 @@ static InterpretResult run(void) {
             case OP_SET_LOCAL: {
                 uint8_t slot = READ_BYTE();
                 frame->slots[slot] = peek(0);
+                break;
+            }
+            case OP_SET_PROPERTY: {
+                if (!IS_INSTANCE(peek(1))) {
+                    runtimeError("Only instances have fields");
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                ObjInstance *instance = AS_INSTANCE(peek(1));
+                ObjString *name = READ_STRING();
+                tableSet(&instance->fields, name, peek(0));
+                Value value = pop();
+                pop();
+                push(value);
                 break;
             }
             case OP_SET_UPVALUE: {

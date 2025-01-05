@@ -1,4 +1,5 @@
 CC = gcc
+CFLAGS = -Wall
 SRC = src
 BUILD = build
 BIN = $(BUILD)/bin
@@ -14,13 +15,13 @@ $(MAIN): $(OBJS)
 	@mkdir -p $(@D)
 	$(CC) -o $@ $^
 
-$(OBJ)/main.o: $(SRC)/main.c
+$(OBJ)/main.o: $(SRC)/main.c $(SRC)/common.h
 	@mkdir -p $(@D)
-	$(CC) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
-$(OBJ)/%.o: $(SRC)/%.c $(SRC)/%.h
+$(OBJ)/%.o: $(SRC)/%.c $(SRC)/%.h $(SRC)/common.h
 	@mkdir -p $(@D)
-	$(CC) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PHONY: clean
 clean:
