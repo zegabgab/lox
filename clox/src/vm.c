@@ -39,12 +39,16 @@ void initVM(void) {
     initTable(&vm.globals);
     initTable(&vm.strings);
 
+    vm.initString = NULL;
+    vm.initString = copyString("init", 4);
+
     defineNative("clock", clockNative);
 }
 
 void freeVM(void) {
     freeTable(&vm.globals);
     freeTable(&vm.strings);
+    vm.initString = NULL;
     freeObjects();
 }
 
@@ -125,6 +129,14 @@ static bool call(ObjClosure *closure, int argCount) {
 
 static bool callClass(ObjClass *klass, int argCount) {
     vm.stackTop[-argCount - 1] = OBJ_VAL(newInstance(klass));
+    Value initializer;
+    if (tableGet(&klass->methods, vm.initString, &initializer)) {
+        return call(AS_CLOSURE(initializer), argCount);
+    } else if (argCount > 0) {
+        runtimeError("Expected 0 arguments but got %d", argCount);
+        return false;
+    }
+
     return true;
 }
 
@@ -133,6 +145,11 @@ static bool callNative(NativeFn function, int argCount) {
     vm.stackTop -= argCount + 1;
     push(result);
     return true;
+}
+
+static bool callMethod(ObjBoundMethod *bound, int argCount) {
+    vm.stackTop[-argCount - 1] = bound->receiver;
+    return call(bound->method, argCount);
 }
 
 static bool notCallable(void) {
@@ -146,6 +163,8 @@ static bool callValue(Value callee, int argCount) {
     }
     
     switch (OBJ_TYPE(callee)) {
+        case OBJ_BOUND_METHOD:
+            return callMethod(AS_BOUND_METHOD(callee), argCount);
         case OBJ_CLASS:
             return callClass(AS_CLASS(callee), argCount);
         case OBJ_CLOSURE:
@@ -155,6 +174,48 @@ static bool callValue(Value callee, int argCount) {
         default:
             return notCallable();
     }
+}
+
+static bool invokeFromClass(ObjClass *klass, ObjString *name, int argCount) {
+    Value method;
+    if (!tableGet(&klass->methods, name, &method)) {
+        runtimeError("Undefined property '%s'", name->chars);
+        return false;
+    }
+
+    return call(AS_CLOSURE(method), argCount);
+}
+
+static bool invoke(ObjString *name, int argCount) {
+    Value receiver = peek(argCount);
+
+    if (!IS_INSTANCE(receiver)) {
+        runtimeError("Only instances have methods");
+        return false;
+    }
+
+    ObjInstance *instance = AS_INSTANCE(receiver);
+
+    Value value;
+    if (tableGet(&instance->fields, name, &value)) {
+        vm.stackTop[-argCount - 1] = value;
+        return callValue(value, argCount);
+    }
+
+    return invokeFromClass(instance->klass, name, argCount);
+}
+
+static bool bindMethod(ObjClass *klass, ObjString *name) {
+    Value method;
+    if (!tableGet(&klass->methods, name, &method)) {
+        runtimeError("Undefined property '%s'", name->chars);
+        return false;
+    }
+
+    ObjBoundMethod *bound = newBoundMethod(peek(0), AS_CLOSURE(method));
+    pop();
+    push(OBJ_VAL(bound));
+    return true;
 }
 
 static bool runCall(int argCount) {
@@ -168,6 +229,13 @@ static void closeUpvalues(Value *last) {
         upvalue->location = &upvalue->closed;
         vm.openUpvalues = upvalue->next;
     }
+}
+
+static void defineMethod(ObjString *name) {
+    Value method = peek(0);
+    ObjClass *klass = AS_CLASS(peek(1));
+    tableSet(&klass->methods, name, method);
+    pop();
 }
 
 static bool runReturn(CallFrame *frame) {
@@ -323,8 +391,10 @@ static InterpretResult run(void) {
                     break;
                 }
 
-                runtimeError("Undefined property '%s'", name->chars);
-                return INTERPRET_RUNTIME_ERROR;
+                if (!bindMethod(instance->klass, name)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                break;
             }
             case OP_GET_UPVALUE: {
                 uint8_t slot = READ_BYTE();
@@ -370,6 +440,15 @@ static InterpretResult run(void) {
             case OP_FALSE:
                 push(BOOL_VAL(false));
                 break;
+            case OP_INVOKE: {
+                ObjString *method = READ_STRING();
+                int argCount = READ_BYTE();
+                if (!invoke(method, argCount)) {
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                frame = &vm.frames[vm.frameCount - 1];
+                break;
+            }
             case OP_JUMP: {
                 uint16_t offset = READ_SHORT();
                 frame->ip += offset;
@@ -387,6 +466,9 @@ static InterpretResult run(void) {
                 frame->ip -= offset;
                 break;
             }
+            case OP_METHOD:
+                defineMethod(READ_STRING());
+                break;
             case OP_MULTIPLY:
                 BINARY_OP(NUMBER_VAL, *);
                 break;
